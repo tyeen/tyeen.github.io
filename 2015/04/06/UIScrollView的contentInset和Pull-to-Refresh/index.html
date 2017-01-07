@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>UIScrollView的contentInset和Pull-to-Refresh | Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="iOS 6开始加入了UIRefreshControl 来帮助实现下拉刷新 效果，用现成的控件自然是方便，但不明白其实现原理心里还是有些惴惴不安。于是小探索了一下，实现一个基本的下拉效果。
+原理很简单，是添加一个Subview 到目标UIScrollView（UITableView）里去，并且设置其frame 使其在显示区域外面（y 等于负的高度）即可。这样当UIScrollView 下滑超出其边界">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UIScrollView的contentInset和Pull-to-Refresh">
+<meta property="og:url" content="http://tyeen.github.io/2015/04/06/UIScrollView的contentInset和Pull-to-Refresh/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta property="og:description" content="iOS 6开始加入了UIRefreshControl 来帮助实现下拉刷新 效果，用现成的控件自然是方便，但不明白其实现原理心里还是有些惴惴不安。于是小探索了一下，实现一个基本的下拉效果。
+原理很简单，是添加一个Subview 到目标UIScrollView（UITableView）里去，并且设置其frame 使其在显示区域外面（y 等于负的高度）即可。这样当UIScrollView 下滑超出其边界">
+<meta property="og:updated_time" content="2016-05-13T08:25:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="UIScrollView的contentInset和Pull-to-Refresh">
+<meta name="twitter:description" content="iOS 6开始加入了UIRefreshControl 来帮助实现下拉刷新 效果，用现成的控件自然是方便，但不明白其实现原理心里还是有些惴惴不安。于是小探索了一下，实现一个基本的下拉效果。
+原理很简单，是添加一个Subview 到目标UIScrollView（UITableView）里去，并且设置其frame 使其在显示区域外面（y 等于负的高度）即可。这样当UIScrollView 下滑超出其边界">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main"><article id="post-UIScrollView的contentInset和Pull-to-Refresh" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      UIScrollView的contentInset和Pull-to-Refresh
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2015/04/06/UIScrollView的contentInset和Pull-to-Refresh/" class="article-date">
+  <time datetime="2015-04-06T08:02:43.000Z" itemprop="datePublished">2015-04-06</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>iOS 6开始加入了<code>UIRefreshControl</code> 来帮助实现下拉刷新 效果，用现成的控件自然是方便，但不明白其实现原理心里还是有些惴惴不安。于是小探索了一下，实现一个基本的下拉效果。</p>
+<p>原理很简单，是添加一个Subview 到目标<code>UIScrollView</code>（<code>UITableView</code>）里去，并且设置其<code>frame</code> 使其在显示区域外面（y 等于负的高度）即可。这样当<code>UIScrollView</code> 下滑超出其边界时，会显示出我们添加进去的Subview。<br>然后在<code>UIScrollViewDelegate</code> 相应的代理函数里，检测到下拉距离超过定义的高度时就可以触发刷新了。</p>
+<a id="more"></a>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>但是这时松开手指<code>UIScrollView</code> 会产生回滚的效果，然后我们添加的Subview 又跑到显示区域外面了。所以要在触发刷新时调整<code>UIScrollView</code>，让我们的Subview 继续显示在上面。方法就是调整<code>UIScrollView</code> 的<code>contentInset</code> 属性。</p>
+<p><code>contentInset</code> 可以扩大<code>UIScrollView</code> 的边界，让其内容即使在超过原本的边界时不会回退。<em>来句题外话，有这种属性确实比Android 的<code>ListView</code> 方便不少。</em></p>
+<p>通过Google 来的结果，我开始也是在<code>UIScrollViewDelegate</code> 的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool)</div></pre></td></tr></table></figure></p>
+<p>里设置<code>contentInset</code> 的，这样确实能够实现效果，但出现一个问题，就是放开手指的一瞬间<code>UITableView</code> 会产生一个跳动。StackOverflow 了一下，确实也有人提到这个问题：<br><a href="http://stackoverflow.com/questions/26050872/animating-uiscrollview-contentinset-causes-jump-stutter" target="_blank" rel="external">Animating UIScrollView contentInset causes jump stutter</a></p>
+<p>按照他的“解决方案”，在改动<code>contentInset</code> 的同时也需要改动<code>contentOffset</code>。而且<code>contentOffset</code> 的改动<strong>必须</strong>和<code>contentInset</code> 的改动一起放到animation 块里，挪到外面都没有效果（亲测）。</p>
+<p>这很难有说服力啊。。。</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>继续观察了几次“跳动”的表现，发现它总是先向下跳一段，再跳回原来位置，然后做正常的回退动画。结合上面问题的“解决方案”，感觉问题确实是发生在<code>contentOffset</code> 上：<br>在设置<code>contentInset</code> 后，和当前要做回滚动画的<code>contentOffset</code> 产生了一些冲突，于是<code>UIScrollView</code> 就重新计算并设置了<code>contentOffset</code>，画面上就产生了一个“跳动”。<br>而上面的“解决方案”，是帮助<code>UIScrollView</code> 重新计算了<code>contentOffset</code>，而且又是放在animation 块里的，所以能和最后要做的回滚动画贴合起来。</p>
+<p>简单总结一下流程：<br>本来<code>UIScrollView</code> 要做1；你告诉它做2；<code>UIScrollView</code> 说我不懂2，需要重新计算从1变到2；你又告诉它我来告诉你怎么样变到2。</p>
+<p>{怎么看都觉得别扭。。。。}</p>
+<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><p>重新看了看<code>UIScrollViewDelegate</code> 里的回调方法，又发现了一个：<br><figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">scrollViewWillEndDragging</span><span class="params">(<span class="number">_</span> scrollView: UIScrollView, withVelocity velocity: CGPoint,</span></span></div><div class="line">    targetContentOffset targetContentOffset: UnsafeMutablePointer&lt;CGPoint&gt;)</div></pre></td></tr></table></figure></p>
+<p>关键是第三个参数<code>targetContentOffset</code>：</p>
+<blockquote>
+<p>The expected offset when the scrolling action decelerates to a stop.</p>
+</blockquote>
+<p>然后是关于这个回调的说明：</p>
+<blockquote>
+<p>This method is not called when the value of the scroll view’s pagingEnabled property is YES. Your application can change the value of the targetContentOffset parameter to adjust where the scrollview finishes its scrolling animation.</p>
+</blockquote>
+<p>也就是说，<code>UIScrollView</code> 在做回滚动作之前，已经通过这个回调告诉自己的代理它要移动的offset 了。我们不正好可以利用这个嘛。<br>于是把对<code>contentInset</code> 的设置放到这个回调里，并且调整<code>targetContentOffset</code> 的值，<code>UITableView</code>终于不再跳了。不过回滚动画没有了，估计是因为直接改了<code>targetContentOffset</code> 的缘故。这好说，把<code>contentInset</code> 放到一个animation 块里就好了。</p>
+<p>现在的流程变成了：<code>UIScrollView</code>说我要做1了，你看这样行不行；你告诉它不如这样做2。<br>这样感觉顺多了。</p>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/09/14/setjmp-longjmp-signal实现简单的try-catch/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          setjmp longjmp signal实现简单的try-catch
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/03/04/Some-thoughts-on-Swift/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">关于Swift 的一点认识：值类型和引用类型，Any 和AnyObject</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'tyeen'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>
+    Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+  </div>
+</section>
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  var disqus_url = 'http://tyeen.github.io/2015/04/06/UIScrollView的contentInset和Pull-to-Refresh/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

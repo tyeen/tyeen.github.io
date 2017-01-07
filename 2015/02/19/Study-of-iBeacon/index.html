@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Study of iBeacon | Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="因工作需要研究了一下iBeacon，简单总结一下。
+技术概要Apple 的iBeacon 技术规范里规定iBeacon 的信号广播频率为100ms 一次，即1秒10次。而Apple 提供的SDK里对iBeacon 监听回调函数由系统每隔一秒通知一次。这两个频率相关的内容是无法更改的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Study of iBeacon">
+<meta property="og:url" content="http://tyeen.github.io/2015/02/19/Study-of-iBeacon/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta property="og:description" content="因工作需要研究了一下iBeacon，简单总结一下。
+技术概要Apple 的iBeacon 技术规范里规定iBeacon 的信号广播频率为100ms 一次，即1秒10次。而Apple 提供的SDK里对iBeacon 监听回调函数由系统每隔一秒通知一次。这两个频率相关的内容是无法更改的。">
+<meta property="og:updated_time" content="2016-05-13T08:25:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Study of iBeacon">
+<meta name="twitter:description" content="因工作需要研究了一下iBeacon，简单总结一下。
+技术概要Apple 的iBeacon 技术规范里规定iBeacon 的信号广播频率为100ms 一次，即1秒10次。而Apple 提供的SDK里对iBeacon 监听回调函数由系统每隔一秒通知一次。这两个频率相关的内容是无法更改的。">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main"><article id="post-Study-of-iBeacon" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Study of iBeacon
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2015/02/19/Study-of-iBeacon/" class="article-date">
+  <time datetime="2015-02-19T02:42:45.000Z" itemprop="datePublished">2015-02-19</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>因工作需要研究了一下iBeacon，简单总结一下。</p>
+<h2 id="技术概要"><a href="#技术概要" class="headerlink" title="技术概要"></a>技术概要</h2><p>Apple 的iBeacon 技术规范里规定iBeacon 的信号广播频率为100ms 一次，即1秒10次。而Apple 提供的SDK里对iBeacon 监听回调函数由系统每隔一秒通知一次。这两个频率相关的内容是无法更改的。<br><a id="more"></a></p>
+<p>Apple 提供的SDK 里，系统回调通知检测到的iBeacon 是封装到一个CLBeacon 类里的。这个类十分简单，用C语言可以描述为下面的结构体：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">struct CLBeacon &#123;</div><div class="line">  NSUUID *proximityUUID;</div><div class="line">  long int major;</div><div class="line">  long int minor;</div><div class="line"></div><div class="line">  CLProximity proximity;</div><div class="line">  double accuracy;</div><div class="line">  long int rssi;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其中，前三个字段用于描述该Beacon，着重看后三个：</p>
+<ul>
+<li><p>proximity 是系统根据接收到的信号强度经过计算得出的一个距离上的“阶段”值，是一个enum，具体为Immediate（最近）、Near（近）、Far（远）、Unknown（检测到的信号极弱，可理解为非常远）</p>
+</li>
+<li><p>accuracy 是一个经统计计算后得出的精度值</p>
+</li>
+<li><p>rssi 是信号强度的平均值。</p>
+</li>
+</ul>
+<p>这三个值里，proximity 是用accuracy 得出的，而accuracy 又是根据rssi 算出来的。</p>
+<p>文档里对proximity 的各个case 值没有明确指出数值范围，经实测，Immediate 大概要在0.5m 范围内，Near 则在0.5～2m，Far 为2～70m 左右。但这些数值有可能会发生变化，所以仅供参考。</p>
+<h2 id="accuracy"><a href="#accuracy" class="headerlink" title="accuracy"></a>accuracy</h2><p>需要特别记录一下accuracy。这个值官方文档描述为：</p>
+<blockquote>
+<p>Indicates the one sigma horizontal accuracy in meters. Use this property to differentiate between beacons with the same proximity value. Do not use it to identify a precise location for the beacon. Accuracy values may fluctuate due to RF interference.</p>
+</blockquote>
+<p>个人理解：该值表示水平方向上取一个sigma 上的精度值，单位为米。仅使用该值区分同一proximity 值时的beacon 的远近，而不要用于精确定位。</p>
+<p>首先需要明确一点，这个值不是一个实时的值，而是经过统计分析后算出的，所以被描述为“一个sigma 上的”，简单翻了翻误差统计，貌似这一个sigma 的范围内得出的值的可信度在95%，所以这个值可以作为一个参考值，但很明显不能作为精确值使用。<br>结合技术概要里信号频率的描述，可以推测是系统1秒内把收到的10次Beacon 信号做了统计分析，然后得出了accuracy 的值。</p>
+<p>顺便提一下那个rssi，官网文档说：</p>
+<blockquote>
+<p>This value is the average RSSI value of the samples received since the range of the beacon was last reported to your app.</p>
+</blockquote>
+<p>所以这个rssi 也是10次取值后的平均值了。</p>
+<p>关于accuracy 的计算，简单了解了一下，在Beacon 发出的信号里包含有一个叫Tx Power 的值，这个值表示在距离这个Beacon 1m 时测到的信号强度，是Beacon 厂商计算好的（有的Beacon 厂商提供修改该值的方法，从而达到控制Beacon 信号广播范围的目的）。于是系统会以这个值为基准，结合收到的信号强度（也就是rssi），算出一个距离值accuracy。<br>Tx Power 并非一个真正的信号强度值，硬件的信号强度这些默认是不改变的，除非厂商提供直接修改的办法。这个值仅仅用来给系统测量距离，所以把它改的越大（表示需要收到这么强的信号才能认为距离1m），则系统计算出的距离就变的越远（因为实际距离1m 时根本收不到这么强的信号）。</p>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/03/04/Some-thoughts-on-Swift/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          关于Swift 的一点认识：值类型和引用类型，Any 和AnyObject
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/02/13/Implement-image-zooming-with-UIScrollView/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Implement image zooming with UIScrollView</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'tyeen'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>
+    Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+  </div>
+</section>
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  var disqus_url = 'http://tyeen.github.io/2015/02/19/Study-of-iBeacon/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

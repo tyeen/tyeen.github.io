@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="Crumbs of thoughts">
+<meta property="og:url" content="http://tyeen.github.io/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Crumbs of thoughts">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main">
+  
+    <article id="post-setjmp-longjmp-signal实现简单的try-catch" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/09/14/setjmp-longjmp-signal实现简单的try-catch/">setjmp longjmp signal实现简单的try-catch</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2015/09/14/setjmp-longjmp-signal实现简单的try-catch/" class="article-date">
+  <time datetime="2015-09-14T09:24:45.000Z" itemprop="datePublished">2015-09-14</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>最近升级了Xcode 7 GM，发现<a href="https://github.com/johnno1962/GitDiff" target="_blank" rel="external">GitDiff</a> 插件不工作了。于是自力更生翻源码找bug。虽然最后发现原因是之前用Xcode-beta 时xcode-select 到了beta 版，和GitDiff 并没有什么关系，但看源码时发现一对看起来很牛逼的函数：setjmp/longjmp。好奇心大起，查阅了一下他们究竟为何物。</p>
+<p><strong>简单来说，setjmp/longjmp 类似goto，但牛逼的多，因为setjmp/longjmp 可以在函数间“跳来跳去”。</strong></p>
+<blockquote>
+<p>不得不吐槽这对函数名，实在太不直观了。。。</p>
+</blockquote>
+<p>仅仅这么个作用的话，貌似没什么使用的必要，那GitDiff为何这么兴师动众的调用这么底层的函数呢？翻看了一下GitDiff 的commit 记录，才知道原来还有个主要人物－－<a href="https://github.com/johnno1962/GitDiff/commit/f6c189e008540fc2a425064ad4b778ec7251f2fb" target="_blank" rel="external"><code>signal</code></a>。</p>
+<p>概括GitDiff 的做法，就是通过<code>setjmp</code>保存好上下文，用<code>signal</code> 函数来截获可能出现的<code>SIGPIPE</code>，然后在<code>SIGPIPE</code>出现时通过<code>longjmp</code>返回出错之前的代码，并通过返回值来避开出错代码，继续往下走。<br>换句话说，就是实现了一个简单的try－catch机制。这也是setjmp/longjmp/signal互相配合的一个“常见”用法。</p>
+<blockquote>
+<p>关于这个<code>SIGPIPE</code>，简单Google 了一下，貌似用<code>popen</code>时还是挺常见的，一般都需要一套同步机制来保证<code>popen</code>和<code>pclose</code></p>
+</blockquote>
+<p>分开来说</p>
+<ol>
+<li>用<code>setjmp</code>保存当前上下文环境到参数(<code>jmp_buf</code>类型)里，<code>jmp_buf</code>的细节和系统具体实现相关，我也没再追下去。其返回值的规则是：第一次调用时返回0，表示是从<code>setjmp</code>返回的；之后，如果<code>longjmp</code>被调用，那么程序会根据保存的上下文环境（之前保存的<code>jmp_buf</code>类型的变量，也是<code>longjmp</code>的第一个参数），再次来到<code>setjmp</code>这里，并返回一个由<code>longjmp</code>带过来的值（<code>longjmp</code>的第二个参数），程序可以通过<code>setjmp</code>的返回值来改变流程。</li>
+<li>调用<code>signal</code>函数安装<code>SIGPIPE</code>信号的处理函数。通过<code>man</code>知道<code>signal</code>的返回值是“当前的对该信号（这里也即<code>SIGPIPE</code>）的处理函数”，也就是默认的处理函数，保存这个值很有必要，因为需要在最后进行恢复。</li>
+<li>如果<code>SIGPIPE</code>被触发，那么在之前安装的信号处理函数里调用<code>longjmp</code>。其第二个参数就是返回到<code>setjmp</code>时的值，这里只要给一个不是0的值，就可以标记为“出错”。</li>
+</ol>
+<p>虽然最后没有找出GitDiff 的bug，但是收获颇丰:)</p>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-UIScrollView的contentInset和Pull-to-Refresh" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/04/06/UIScrollView的contentInset和Pull-to-Refresh/">UIScrollView的contentInset和Pull-to-Refresh</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2015/04/06/UIScrollView的contentInset和Pull-to-Refresh/" class="article-date">
+  <time datetime="2015-04-06T08:02:43.000Z" itemprop="datePublished">2015-04-06</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>iOS 6开始加入了<code>UIRefreshControl</code> 来帮助实现下拉刷新 效果，用现成的控件自然是方便，但不明白其实现原理心里还是有些惴惴不安。于是小探索了一下，实现一个基本的下拉效果。</p>
+<p>原理很简单，是添加一个Subview 到目标<code>UIScrollView</code>（<code>UITableView</code>）里去，并且设置其<code>frame</code> 使其在显示区域外面（y 等于负的高度）即可。这样当<code>UIScrollView</code> 下滑超出其边界时，会显示出我们添加进去的Subview。<br>然后在<code>UIScrollViewDelegate</code> 相应的代理函数里，检测到下拉距离超过定义的高度时就可以触发刷新了。</p>
+        
+          <p class="article-more-link">
+            <a href="/2015/04/06/UIScrollView的contentInset和Pull-to-Refresh/#more">More...</a>
+          </p>
+        
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-Some-thoughts-on-Swift" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/03/04/Some-thoughts-on-Swift/">关于Swift 的一点认识：值类型和引用类型，Any 和AnyObject</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2015/03/04/Some-thoughts-on-Swift/" class="article-date">
+  <time datetime="2015-03-04T09:07:42.000Z" itemprop="datePublished">2015-03-04</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Swift 1.2对值类型的处理做了很多优化，使其执行效率得到很大提高。国外很多评测文章也指出新的Swift 编译器编译出的代码明显比之前版本编译出的代码快。受其影响，决定将自己项目里的数据结构全部换成struct。经过这一番重构，感觉对Swift 这门语言有了点新的认识。</p>
+<p>之前没用过有现代语法的其它语言，像Ruby、Scala 这类。于是看到Swift 那诸多眼花缭乱的“新”特性很是兴奋，一直坚持练习。但对其的理解始终停留在这种语言的表象层面或者说语法层面上，比如强大的enum，很流畅的closure 表达方式、函数式／范型思想的大量运用等等。只是觉得它比起其它古老的语言（Java、Objective-C）等要好用，却没有进行深入了解。<br>
+        
+          <p class="article-more-link">
+            <a href="/2015/03/04/Some-thoughts-on-Swift/#more">More...</a>
+          </p>
+        
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-Study-of-iBeacon" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/02/19/Study-of-iBeacon/">Study of iBeacon</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2015/02/19/Study-of-iBeacon/" class="article-date">
+  <time datetime="2015-02-19T02:42:45.000Z" itemprop="datePublished">2015-02-19</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>因工作需要研究了一下iBeacon，简单总结一下。</p>
+<h2 id="技术概要"><a href="#技术概要" class="headerlink" title="技术概要"></a>技术概要</h2><p>Apple 的iBeacon 技术规范里规定iBeacon 的信号广播频率为100ms 一次，即1秒10次。而Apple 提供的SDK里对iBeacon 监听回调函数由系统每隔一秒通知一次。这两个频率相关的内容是无法更改的。<br>
+        
+          <p class="article-more-link">
+            <a href="/2015/02/19/Study-of-iBeacon/#more">More...</a>
+          </p>
+        
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-Implement-image-zooming-with-UIScrollView" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/02/13/Implement-image-zooming-with-UIScrollView/">Implement image zooming with UIScrollView</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2015/02/13/Implement-image-zooming-with-UIScrollView/" class="article-date">
+  <time datetime="2015-02-13T06:01:33.000Z" itemprop="datePublished">2015-02-13</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>想要在iOS上实现一个简单的手指缩放图片的功能，查了一下用UIScrollView 是一个比较方便的途径，因为其原生支持pinch－zoom的功能，这点真是比Android 好太多。</p>
+<p>##实现方式</p>
+<p>经过一些搜索和实验，明确了UIScrollView 要实现pinch－zoom，只需做到下面两点：</p>
+<ul>
+<li><p>实现UIScrollView.viewForZoomingInScrollView() 函数。</p>
+</li>
+<li><p>设置好maximumZoomScale 和 minimumZoomScroll 以及zoomScale 属性的值。</p>
+</li>
+</ul>
+        
+          <p class="article-more-link">
+            <a href="/2015/02/13/Implement-image-zooming-with-UIScrollView/#more">More...</a>
+          </p>
+        
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-xcode-plug-in-navigationbarshrinker" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/07/28/xcode-plug-in-navigationbarshrinker/">Xcode Plug-in: NavigationBarShrinker</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2014/07/28/xcode-plug-in-navigationbarshrinker/" class="article-date">
+  <time datetime="2014-07-28T12:30:32.000Z" itemprop="datePublished">2014-07-28</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>最近完成了一个Xcode插件，用来控制编辑器上方导航栏的显示。开发中学到了不少东西，小记一笔。</p>
+<p>契机归功于Xcode 6 Beta3，把导航栏改宽了不少，导致垂直可视区域少了一行代码，Yosemite把标题栏缩短的优势也荡然无存。<br>
+        
+          <p class="article-more-link">
+            <a href="/2014/07/28/xcode-plug-in-navigationbarshrinker/#more">More...</a>
+          </p>
+        
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/">清除最近打开文件列表的Alfred 2 Workflow</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/" class="article-date">
+  <time datetime="2014-07-19T09:42:49.000Z" itemprop="datePublished">2014-07-19</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>之前装了一个markdown的软件，发现不顺手就删掉了，然后markdown文件就被Xcode关联了（不知是之前就这样还是默认如此）。<br>于是一不小心Xcode的最近打开列表里多了一些无关紧要的md文件，然后发现不能单独删除，只能一次性全部清空，着实让我不爽。<br>
+        
+          <p class="article-more-link">
+            <a href="/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/#more">More...</a>
+          </p>
+        
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-publish-depth-1-dot-0" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/03/18/publish-depth-1-dot-0/">Depth 1.0 发布</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2014/03/18/publish-depth-1-dot-0/" class="article-date">
+  <time datetime="2014-03-18T11:03:36.000Z" itemprop="datePublished">2014-03-18</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>今天发布了做了好久的Depth for Android，一个Twitter客户端，也是我第一个比较正式的应用。<br>而且刚一发布就发现了一个bug：发推成功后会导致app崩溃。闹了一个大笑话。还被指出了一个英语语法的问题。~_~;</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/03/18/publish-depth-1-dot-0/#more">More...</a>
+          </p>
+        
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-about-onsaveinstancestate" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/03/06/about-onsaveinstancestate/">关于onSaveInstanceState 的一些认识</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2014/03/06/about-onsaveinstancestate/" class="article-date">
+  <time datetime="2014-03-06T04:14:40.000Z" itemprop="datePublished">2014-03-06</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>onSaveInstaceState 是Android 系统里的一个重要函数，<a href="http://developer.android.com/reference/android/app/Activity.html#onSaveInstanceState\(android.os.Bundle\">官方</a>)关于它的基本描述其实已经很明白，这个函数是在系统将要kill 掉你的Activity 之前调用的，从而给你机会保存一些重要数据。并且还好心的指出这个函数并不对Activity 的生存周期产生影响，它仅仅是在上述的“特殊情况”下才会被调用，正常的退出操作并不会 触发它。简单翻译：<br>
+        
+          <p class="article-more-link">
+            <a href="/2014/03/06/about-onsaveinstancestate/#more">More...</a>
+          </p>
+        
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-first-post" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/03/05/first-post/">First Post</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2014/03/05/first-post/" class="article-date">
+  <time datetime="2014-03-05T13:06:12.000Z" itemprop="datePublished">2014-03-05</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Record for my first blog:)</p>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
+  
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>关于onSaveInstanceState 的一些认识 | Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="onSaveInstaceState 是Android 系统里的一个重要函数，官方)关于它的基本描述其实已经很明白，这个函数是在系统将要kill 掉你的Activity 之前调用的，从而给你机会保存一些重要数据。并且还好心的指出这个函数并不对Activity 的生存周期产生影响，它仅仅是在上述的“特殊情况”下才会被调用，正常的退出操作并不会 触发它。简单翻译：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关于onSaveInstanceState 的一些认识">
+<meta property="og:url" content="http://tyeen.github.io/2014/03/06/about-onsaveinstancestate/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta property="og:description" content="onSaveInstaceState 是Android 系统里的一个重要函数，官方)关于它的基本描述其实已经很明白，这个函数是在系统将要kill 掉你的Activity 之前调用的，从而给你机会保存一些重要数据。并且还好心的指出这个函数并不对Activity 的生存周期产生影响，它仅仅是在上述的“特殊情况”下才会被调用，正常的退出操作并不会 触发它。简单翻译：">
+<meta property="og:updated_time" content="2016-05-13T08:25:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="关于onSaveInstanceState 的一些认识">
+<meta name="twitter:description" content="onSaveInstaceState 是Android 系统里的一个重要函数，官方)关于它的基本描述其实已经很明白，这个函数是在系统将要kill 掉你的Activity 之前调用的，从而给你机会保存一些重要数据。并且还好心的指出这个函数并不对Activity 的生存周期产生影响，它仅仅是在上述的“特殊情况”下才会被调用，正常的退出操作并不会 触发它。简单翻译：">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main"><article id="post-about-onsaveinstancestate" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      关于onSaveInstanceState 的一些认识
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2014/03/06/about-onsaveinstancestate/" class="article-date">
+  <time datetime="2014-03-06T04:14:40.000Z" itemprop="datePublished">2014-03-06</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>onSaveInstaceState 是Android 系统里的一个重要函数，<a href="http://developer.android.com/reference/android/app/Activity.html#onSaveInstanceState\(android.os.Bundle\" target="_blank" rel="external">官方</a>)关于它的基本描述其实已经很明白，这个函数是在系统将要kill 掉你的Activity 之前调用的，从而给你机会保存一些重要数据。并且还好心的指出这个函数并不对Activity 的生存周期产生影响，它仅仅是在上述的“特殊情况”下才会被调用，正常的退出操作并不会 触发它。简单翻译：<br><a id="more"></a></p>
+<blockquote>
+<p>用于取出上个实例（就是被kill 掉之前）的状态，从而可以在onCreate 或者onRestoreInstanceState 里恢复。这个函数将会在Activity 被kill 掉之前调用。例如：如果Activity B 从Activity A 被启动，并且在某个时间点A因为系统资源不足被kill 掉了，那么A将会通过这个函数获得机会保存它界面上的状态，这样当用户又切换回A时，保存的状态可以通过onCreate 或者onRestoreInstance 恢复。</p>
+<p>不要和Activity 的生存周期函数如onPause 等弄混了，onPause 是只要Activity 被放到后台就一定会被调用的，同样onStop 是在Activity 被销毁之前调用。什么时候onPause 和onStop 会被调用但是这个函数不会呢？那上个例子来说：当用户从B 切换回A 后，B 的onSaveInstanceState 函数是没有必要被调用的，因为B 这个实例已经不可能再被用到了。另外即使当A 处在B 的后面（后台），但是系统没有发现资源紧张的状态时，A 的onSaveInstanceState 函数是不会被调用的，相反，它的onPause 是一定会被调用的（ 因为到后台去了）。</p>
+<p>在这个函数到默认实现里，它存储了当前Activity 上View 的信息，如果你想要保存自己的一些状态信息，请务必调用默认实现，确保View 的信息被正确的保存。</p>
+</blockquote>
+<p>当初我看完这个说明（印象中早些时候没写的这么详细）后的感想就是这个玩意儿应该没多大用处吧，无非就是快要完蛋时候给个机会保存数据嘛，我完全可以在<a href="http://developer.android.com/reference/android/app/Activity.html#onStop\(\" target="_blank" rel="external">onStop</a>) 或者<a href="http://developer.android.com/reference/android/app/Activity.html#onDestroy\(\" target="_blank" rel="external">onDestroy</a>) 里做啊，反正都是要被调用的。而且保存数据还要传到<a href="http://developer.android.com/reference/android/os/Bundle.html" target="_blank" rel="external">Bundle</a> 里， 就要求自定义的数据去实现<a href="http://developer.android.com/reference/android/os/Parcelable.html" target="_blank" rel="external">Parcelalbe</a> 接口，太麻烦了。<br>试着在代码里加log 看了看被调用的情况，更有些摸不着头脑的感觉了：有时在log 里出现了，有时却没有。但有一点确实如官方说明指出的：如果这个函数被调用了，那一定是在onStop之前。</p>
+<p>但是我忽视了很重要的一点，就是“快要完蛋”和“正常退出”时保存的数据的用途。“快要完蛋”时系统调用onSaveInstanceState， 之后也确实走了onStop 和onDestroy ， 但不同的是，“快要完蛋”之后，系统有可能会再给你机会让你“重生”，也就是recreate 的过程。此时保存的数据会被直接用于Activity 的“重生”——系统帮你做这些事。 而“正常退出”则直接走onStop 和onDestroy ，这时保存的数据是用于下次启动的——你自己做这些事。</p>
+<p>要理解这个函数的重要之处，还需要明白<a href="http://developer.android.com/reference/android/app/Activity.html#onCreate\(android.os.Bundle\" target="_blank" rel="external">onCreate</a>)。它是恢复数据的关键（当然还有一个<a href="http://developer.android.com/reference/android/app/Activity.html#onRestoreInstanceState\(android.os.Bundle\" target="_blank" rel="external">onRestoreInstanceState</a>)，但是这个函数是在onStart 之后被调用，在这里恢复数据有点晚的感觉…）。这个函数带一个参数savedInstanceState，它就是onSaveInstanceState 的结果。流程是这样的：<strong>某个时刻</strong>系统触发Activity的recreate过程，首当其冲的便是调用onSaveInstanceState，接着便是onStop -&gt; onDestroy 然后将onSaveInstanceState 里保存的状态参数（就是Bundle）传给onCreate，然后就可以在onCreate 里取出之前保存的状态参数进行恢复了。</p>
+<p>这里的<strong>某个时刻</strong>有多种可能性，比如当前Activity 在后台且内存资源紧张，或者系统的配置发生了变化（字体、屏幕方向等）。系统配置变化时也伴随着<a href="http://developer.android.com/reference/android/app/Activity.html#onConfigurationChanged\(android.content.res.Configuration\" target="_blank" rel="external">onConfigurationChanged</a>) 的调用。</p>
+<blockquote>
+<p>说点题外话，虽然可以在AndroidManifest.xml里设置<br><a href="http://developer.android.com/reference/android/R.attr.html#configChanges" target="_blank" rel="external">android:configChange</a>来“避免”Activity被recreate，但是Activity却需要自己调整相应的变化。比如字号改变后，虽然<br>android:configChange=fontScale可以使Activity不被销毁，但Activity画面上的字号却不会有变化。（不知道Android这么设计<br>算不算是偷懒…）</p>
+<p>另外说到后台，并不是App到了后台就会被调用onSaveInstanceState。其实Activity被切换到后台的过程是很复杂的，系统会<br> 试着衡量被切换到后台的Activity的资源占用等等一些列的信息，从而决定是不是调用这个函数。</p>
+</blockquote>
+<p>一个实际情况就是更改系统字号。首先启动App，然后通过多任务切换（从log 里会发现这个时候onSaveInstanceState 已经被调用了），到设置里改变字号，然后再回到App，此时onStop -&gt; onDestroy -&gt; onCreate 会被依次调用，然后onCreate 的参数里就是之前保存的状态参数了。</p>
+<p>所以理论联系实际，如果App没有对界面状态的要求，每次呈现给用户的都是同一个界面，那么完全可以忽视这个过程。但是如果想在发生“意外情况”时也保留当前状态，那么重写这个函数，把想要保留的状态存到Bundle 里就成了必要的选择了。</p>
+<p>说到要保存的状态，自然会想到当前View 的状态，比如一个ListView 的当前滑动到的位置等，但是这却是不必要的。因为Android 系统会为你做这些事情，实际上View里面也有个<a href="http://developer.android.com/reference/android/view/View.html#onSaveInstanceState\(\" target="_blank" rel="external">onSaveInstanceState</a>) 函数，作用也是一模一样，只是生存周期不再是Activity 的那套，而是View 自己的（关于View 的生存周期有点麻烦，连Google 自己的人都说不明白;)。系统提供的那些控件（ListView、ScrollView、EditText 等）都会记录自己的状态以待下次被创建时使用。当然自定义的控件里添加的属性还是需要自己想办法来保存的，或者在View的onStateInstanceState 里搞定，又或者在Activity（Fragment）里搞定，具体情况具体对待了。</p>
+<p>最后是这个函数被调用并不意味着Activity 就一定会被recreate，比如通过多任务键切换到后台，此时是一定被调用的，但是即使到了后台，如果没有特殊情况发生，用户又切换回来的话，不会伴随onStop -&gt; onDestroy -&gt; onCreate的过程（这也是之前我瞎测时看到的“时有时无”的情况），否则Android 就真是 太傻了。</p>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/03/18/publish-depth-1-dot-0/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Depth 1.0 发布
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/03/05/first-post/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">First Post</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'tyeen'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>
+    Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+  </div>
+</section>
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  var disqus_url = 'http://tyeen.github.io/2014/03/06/about-onsaveinstancestate/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

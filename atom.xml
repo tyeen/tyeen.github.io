@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Crumbs of thoughts</title>
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://tyeen.github.io/"/>
+  <updated>2016-05-13T08:25:16.000Z</updated>
+  <id>http://tyeen.github.io/</id>
+  
+  <author>
+    <name>Yeen</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>setjmp longjmp signal实现简单的try-catch</title>
+    <link href="http://tyeen.github.io/2015/09/14/setjmp-longjmp-signal%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E7%9A%84try-catch/"/>
+    <id>http://tyeen.github.io/2015/09/14/setjmp-longjmp-signal实现简单的try-catch/</id>
+    <published>2015-09-14T09:24:45.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近升级了Xcode 7 GM，发现<a href="https://github.com/johnno1962/GitDiff" target="_blank" rel="external">GitDiff</a> 插件不工作了。于是自力更生翻源码找bug。虽然最后发现原因是之前用Xcode-beta 时xcode-select 到了beta 版，和GitDiff 并没有什么关系，但看源码时发现一对看起来很牛逼的函数：setjmp/longjmp。好奇心大起，查阅了一下他们究竟为何物。</p>
+<p><strong>简单来说，setjmp/longjmp 类似goto，但牛逼的多，因为setjmp/longjmp 可以在函数间“跳来跳去”。</strong></p>
+<blockquote>
+<p>不得不吐槽这对函数名，实在太不直观了。。。</p>
+</blockquote>
+<p>仅仅这么个作用的话，貌似没什么使用的必要，那GitDiff为何这么兴师动众的调用这么底层的函数呢？翻看了一下GitDiff 的commit 记录，才知道原来还有个主要人物－－<a href="https://github.com/johnno1962/GitDiff/commit/f6c189e008540fc2a425064ad4b778ec7251f2fb" target="_blank" rel="external"><code>signal</code></a>。</p>
+<p>概括GitDiff 的做法，就是通过<code>setjmp</code>保存好上下文，用<code>signal</code> 函数来截获可能出现的<code>SIGPIPE</code>，然后在<code>SIGPIPE</code>出现时通过<code>longjmp</code>返回出错之前的代码，并通过返回值来避开出错代码，继续往下走。<br>换句话说，就是实现了一个简单的try－catch机制。这也是setjmp/longjmp/signal互相配合的一个“常见”用法。</p>
+<blockquote>
+<p>关于这个<code>SIGPIPE</code>，简单Google 了一下，貌似用<code>popen</code>时还是挺常见的，一般都需要一套同步机制来保证<code>popen</code>和<code>pclose</code></p>
+</blockquote>
+<p>分开来说</p>
+<ol>
+<li>用<code>setjmp</code>保存当前上下文环境到参数(<code>jmp_buf</code>类型)里，<code>jmp_buf</code>的细节和系统具体实现相关，我也没再追下去。其返回值的规则是：第一次调用时返回0，表示是从<code>setjmp</code>返回的；之后，如果<code>longjmp</code>被调用，那么程序会根据保存的上下文环境（之前保存的<code>jmp_buf</code>类型的变量，也是<code>longjmp</code>的第一个参数），再次来到<code>setjmp</code>这里，并返回一个由<code>longjmp</code>带过来的值（<code>longjmp</code>的第二个参数），程序可以通过<code>setjmp</code>的返回值来改变流程。</li>
+<li>调用<code>signal</code>函数安装<code>SIGPIPE</code>信号的处理函数。通过<code>man</code>知道<code>signal</code>的返回值是“当前的对该信号（这里也即<code>SIGPIPE</code>）的处理函数”，也就是默认的处理函数，保存这个值很有必要，因为需要在最后进行恢复。</li>
+<li>如果<code>SIGPIPE</code>被触发，那么在之前安装的信号处理函数里调用<code>longjmp</code>。其第二个参数就是返回到<code>setjmp</code>时的值，这里只要给一个不是0的值，就可以标记为“出错”。</li>
+</ol>
+<p>虽然最后没有找出GitDiff 的bug，但是收获颇丰:)</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;最近升级了Xcode 7 GM，发现&lt;a href=&quot;https://github.com/johnno1962/GitDiff&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;GitDiff&lt;/a&gt; 插件不工作了。于是自力更生翻源码找bug。虽然最后发现原
+    
+    </summary>
+    
+    
+      <category term="System" scheme="http://tyeen.github.io/tags/System/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>UIScrollView的contentInset和Pull-to-Refresh</title>
+    <link href="http://tyeen.github.io/2015/04/06/UIScrollView%E7%9A%84contentInset%E5%92%8CPull-to-Refresh/"/>
+    <id>http://tyeen.github.io/2015/04/06/UIScrollView的contentInset和Pull-to-Refresh/</id>
+    <published>2015-04-06T08:02:43.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>iOS 6开始加入了<code>UIRefreshControl</code> 来帮助实现下拉刷新 效果，用现成的控件自然是方便，但不明白其实现原理心里还是有些惴惴不安。于是小探索了一下，实现一个基本的下拉效果。</p>
+<p>原理很简单，是添加一个Subview 到目标<code>UIScrollView</code>（<code>UITableView</code>）里去，并且设置其<code>frame</code> 使其在显示区域外面（y 等于负的高度）即可。这样当<code>UIScrollView</code> 下滑超出其边界时，会显示出我们添加进去的Subview。<br>然后在<code>UIScrollViewDelegate</code> 相应的代理函数里，检测到下拉距离超过定义的高度时就可以触发刷新了。</p>
+<a id="more"></a>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>但是这时松开手指<code>UIScrollView</code> 会产生回滚的效果，然后我们添加的Subview 又跑到显示区域外面了。所以要在触发刷新时调整<code>UIScrollView</code>，让我们的Subview 继续显示在上面。方法就是调整<code>UIScrollView</code> 的<code>contentInset</code> 属性。</p>
+<p><code>contentInset</code> 可以扩大<code>UIScrollView</code> 的边界，让其内容即使在超过原本的边界时不会回退。<em>来句题外话，有这种属性确实比Android 的<code>ListView</code> 方便不少。</em></p>
+<p>通过Google 来的结果，我开始也是在<code>UIScrollViewDelegate</code> 的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool)</div></pre></td></tr></table></figure></p>
+<p>里设置<code>contentInset</code> 的，这样确实能够实现效果，但出现一个问题，就是放开手指的一瞬间<code>UITableView</code> 会产生一个跳动。StackOverflow 了一下，确实也有人提到这个问题：<br><a href="http://stackoverflow.com/questions/26050872/animating-uiscrollview-contentinset-causes-jump-stutter" target="_blank" rel="external">Animating UIScrollView contentInset causes jump stutter</a></p>
+<p>按照他的“解决方案”，在改动<code>contentInset</code> 的同时也需要改动<code>contentOffset</code>。而且<code>contentOffset</code> 的改动<strong>必须</strong>和<code>contentInset</code> 的改动一起放到animation 块里，挪到外面都没有效果（亲测）。</p>
+<p>这很难有说服力啊。。。</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>继续观察了几次“跳动”的表现，发现它总是先向下跳一段，再跳回原来位置，然后做正常的回退动画。结合上面问题的“解决方案”，感觉问题确实是发生在<code>contentOffset</code> 上：<br>在设置<code>contentInset</code> 后，和当前要做回滚动画的<code>contentOffset</code> 产生了一些冲突，于是<code>UIScrollView</code> 就重新计算并设置了<code>contentOffset</code>，画面上就产生了一个“跳动”。<br>而上面的“解决方案”，是帮助<code>UIScrollView</code> 重新计算了<code>contentOffset</code>，而且又是放在animation 块里的，所以能和最后要做的回滚动画贴合起来。</p>
+<p>简单总结一下流程：<br>本来<code>UIScrollView</code> 要做1；你告诉它做2；<code>UIScrollView</code> 说我不懂2，需要重新计算从1变到2；你又告诉它我来告诉你怎么样变到2。</p>
+<p>{怎么看都觉得别扭。。。。}</p>
+<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><p>重新看了看<code>UIScrollViewDelegate</code> 里的回调方法，又发现了一个：<br><figure class="highlight swift"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">scrollViewWillEndDragging</span><span class="params">(<span class="number">_</span> scrollView: UIScrollView, withVelocity velocity: CGPoint,</span></span></div><div class="line">    targetContentOffset targetContentOffset: UnsafeMutablePointer&lt;CGPoint&gt;)</div></pre></td></tr></table></figure></p>
+<p>关键是第三个参数<code>targetContentOffset</code>：</p>
+<blockquote>
+<p>The expected offset when the scrolling action decelerates to a stop.</p>
+</blockquote>
+<p>然后是关于这个回调的说明：</p>
+<blockquote>
+<p>This method is not called when the value of the scroll view’s pagingEnabled property is YES. Your application can change the value of the targetContentOffset parameter to adjust where the scrollview finishes its scrolling animation.</p>
+</blockquote>
+<p>也就是说，<code>UIScrollView</code> 在做回滚动作之前，已经通过这个回调告诉自己的代理它要移动的offset 了。我们不正好可以利用这个嘛。<br>于是把对<code>contentInset</code> 的设置放到这个回调里，并且调整<code>targetContentOffset</code> 的值，<code>UITableView</code>终于不再跳了。不过回滚动画没有了，估计是因为直接改了<code>targetContentOffset</code> 的缘故。这好说，把<code>contentInset</code> 放到一个animation 块里就好了。</p>
+<p>现在的流程变成了：<code>UIScrollView</code>说我要做1了，你看这样行不行；你告诉它不如这样做2。<br>这样感觉顺多了。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;iOS 6开始加入了&lt;code&gt;UIRefreshControl&lt;/code&gt; 来帮助实现下拉刷新 效果，用现成的控件自然是方便，但不明白其实现原理心里还是有些惴惴不安。于是小探索了一下，实现一个基本的下拉效果。&lt;/p&gt;
+&lt;p&gt;原理很简单，是添加一个Subview 到目标&lt;code&gt;UIScrollView&lt;/code&gt;（&lt;code&gt;UITableView&lt;/code&gt;）里去，并且设置其&lt;code&gt;frame&lt;/code&gt; 使其在显示区域外面（y 等于负的高度）即可。这样当&lt;code&gt;UIScrollView&lt;/code&gt; 下滑超出其边界时，会显示出我们添加进去的Subview。&lt;br&gt;然后在&lt;code&gt;UIScrollViewDelegate&lt;/code&gt; 相应的代理函数里，检测到下拉距离超过定义的高度时就可以触发刷新了。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="iOS" scheme="http://tyeen.github.io/tags/iOS/"/>
+    
+      <category term="UIScrollView" scheme="http://tyeen.github.io/tags/UIScrollView/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>关于Swift 的一点认识：值类型和引用类型，Any 和AnyObject</title>
+    <link href="http://tyeen.github.io/2015/03/04/Some-thoughts-on-Swift/"/>
+    <id>http://tyeen.github.io/2015/03/04/Some-thoughts-on-Swift/</id>
+    <published>2015-03-04T09:07:42.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>Swift 1.2对值类型的处理做了很多优化，使其执行效率得到很大提高。国外很多评测文章也指出新的Swift 编译器编译出的代码明显比之前版本编译出的代码快。受其影响，决定将自己项目里的数据结构全部换成struct。经过这一番重构，感觉对Swift 这门语言有了点新的认识。</p>
+<p>之前没用过有现代语法的其它语言，像Ruby、Scala 这类。于是看到Swift 那诸多眼花缭乱的“新”特性很是兴奋，一直坚持练习。但对其的理解始终停留在这种语言的表象层面或者说语法层面上，比如强大的enum，很流畅的closure 表达方式、函数式／范型思想的大量运用等等。只是觉得它比起其它古老的语言（Java、Objective-C）等要好用，却没有进行深入了解。<br><a id="more"></a></p>
+<p>##值类型和引用类型</p>
+<p>比如它一直宣扬的值类型安全，我一直觉得struct 没有多大用处，而且其官方文档上也建议“绝大多数情况下使用class”：</p>
+<blockquote>
+<p>In all other cases, define a class, and create instances of that class to be managed and passed by reference. In practice, this means that most custom data constructs should be classes, not structures.</p>
+</blockquote>
+<p>我觉得class 的一大优越之处正是在于其可以被“引用”，只要保持一份实体，剩下的操作都可以通过引用来解决，空间上可以节省好多。</p>
+<p>但经过这次重构、大量使用struct 来保存、传递数据后，发现值类型确实有着非常“好”的地方，而且这是一种思维方式上的改变，我觉得没有什么比这更让我兴奋的了。</p>
+<p>使用值类型后，最大的变化在于写代码的时候可以专注于当前代码段了。之前的习惯是收到数据后，会去考虑这个数据哪里来，确保数据的源头后再做相应的调整、操作；如果发现数据需要被修改，那么需要考虑这个修改是临时性的还是永久性的，以及是否需要把数据做备份来保证不会干扰到源头。而变成值类型后，所有的东西都是不变的了，如果做了改动，那系统会自动的给你做一份copy，你的所有修改都发生在这份copy 之上。所以不需要再去考虑这份数据的源头在哪儿，只需要想如果有修改是否要保持住这份修改，而这些操作是只发生在当前函数内部的，也就是如何设计这个函数的问题了。举个栗子，某个函数本身不会产生任何数据，而是需要修改传进来的数据，那么可以把函数的参数加上inout 关键字即可，这样所有的改变都会反应到参数里；而如果函数本身是会产生数据的，那么参数的作用就变成了参考，所以没必要动参数的内容，相反如果在写这个函数的时候发现要改参数数据的内容，很明显需要停下来想想是不是设计上哪里有问题了。</p>
+<p>这种安全的方式让程序整个变的更可靠，也更简单，因为你可以大胆放心的使用传进来的参数，完全无毒副作用。至于多线程环境下自然的便利那就不用多说了。</p>
+<p>不过相比引用类型来说，空间上确实会有一定的开销，比如传进来一个数组，一旦改了其中一个元素，那整个数组都会发生一次copy。但这些可以通过一定的设计方案来解决，比如上面说的inout 方式（但个人觉得inout 还是尽量少用，因为会破坏值类型安全的特性），或者借用一些临时变量。</p>
+<p>##Any 和AnyObject</p>
+<p>另外一个认识的变化是关于Swift 的Any 和AnyObject类型。这个算是上面说的值类型／引用类型的一点延伸。</p>
+<p>之前用<code>[AnyObject]</code>时发现的一个问题，就是往<code>[AnyObject]</code>里放Bool、Int 后，它们会全部变成数值，然后在接收端用switch case 像下面一样来把每个数据还原时，如果先判断Bool，那么Int 也会被当作Bool －－非0为true，0为false；但如果先判断Int，那么Bool 会变成Int－－1或者0。换句话说就是无法把数据还原回来了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">for item in arr &#123;</div><div class="line">    case let intValue as Int:</div><div class="line">    // process as Int</div><div class="line">    case let boolValue as Bool:</div><div class="line">    // process as Bool</div><div class="line">    case let strValue as String:</div><div class="line">    // process as String</div><div class="line">    default:</div><div class="line">    // Not supported type</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>当时不明白是怎么回事，以为是Swift 设计上的缺陷，但这次Google 一下后，了解到这背后的原因：因为AnyObject 是对类对象也就是引用类型的抽象，并非Swift 的值类型，所以String、Int 等Swift 的类型会被转成Cocoa 里相应的对象，比如String 会转成NSString，Int 会转成NSNumber。如果数据要返回，那会再把Cocoa 的对象转回String 的类型（Swift 1.2里已经不再支持这一种类型的隐式转换，还是挺不错的）。Int、Bool 都变成了NSNumber，原来的类型信息自然就不见了。</p>
+<p>当时写这段代码是由于对这些事情不了解，以为AnyObject 就可以代表所有类型，而Any 不过相当于是AnyObject 的一个父类，所以用了<code>[AnyObject]</code>。<br>试着用<code>[Any]</code>替代<code>[AnyObject]</code>后发现这些Bool、Int 都可以被很好的识别还原了。</p>
+<p>当然最后没有使用<code>[Any]</code>，因为这种过于抽象的东西做不到精确控制，用了值类型后，我需要让所有东西都为我所控:)<br>另外一个原因在于Swift 编译器的bug，在我的机器上当Any 数组里放到超过20个数据时，编译器会疯狂的吃内存，21个时会用到25G左右来完成编译，而到达22个时，编译器吃到60G＋的内存后被系统杀死，编译无法完成。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;Swift 1.2对值类型的处理做了很多优化，使其执行效率得到很大提高。国外很多评测文章也指出新的Swift 编译器编译出的代码明显比之前版本编译出的代码快。受其影响，决定将自己项目里的数据结构全部换成struct。经过这一番重构，感觉对Swift 这门语言有了点新的认识。&lt;/p&gt;
+&lt;p&gt;之前没用过有现代语法的其它语言，像Ruby、Scala 这类。于是看到Swift 那诸多眼花缭乱的“新”特性很是兴奋，一直坚持练习。但对其的理解始终停留在这种语言的表象层面或者说语法层面上，比如强大的enum，很流畅的closure 表达方式、函数式／范型思想的大量运用等等。只是觉得它比起其它古老的语言（Java、Objective-C）等要好用，却没有进行深入了解。&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="iOS" scheme="http://tyeen.github.io/tags/iOS/"/>
+    
+      <category term="Swift" scheme="http://tyeen.github.io/tags/Swift/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Study of iBeacon</title>
+    <link href="http://tyeen.github.io/2015/02/19/Study-of-iBeacon/"/>
+    <id>http://tyeen.github.io/2015/02/19/Study-of-iBeacon/</id>
+    <published>2015-02-19T02:42:45.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>因工作需要研究了一下iBeacon，简单总结一下。</p>
+<h2 id="技术概要"><a href="#技术概要" class="headerlink" title="技术概要"></a>技术概要</h2><p>Apple 的iBeacon 技术规范里规定iBeacon 的信号广播频率为100ms 一次，即1秒10次。而Apple 提供的SDK里对iBeacon 监听回调函数由系统每隔一秒通知一次。这两个频率相关的内容是无法更改的。<br><a id="more"></a></p>
+<p>Apple 提供的SDK 里，系统回调通知检测到的iBeacon 是封装到一个CLBeacon 类里的。这个类十分简单，用C语言可以描述为下面的结构体：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">struct CLBeacon &#123;</div><div class="line">  NSUUID *proximityUUID;</div><div class="line">  long int major;</div><div class="line">  long int minor;</div><div class="line"></div><div class="line">  CLProximity proximity;</div><div class="line">  double accuracy;</div><div class="line">  long int rssi;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其中，前三个字段用于描述该Beacon，着重看后三个：</p>
+<ul>
+<li><p>proximity 是系统根据接收到的信号强度经过计算得出的一个距离上的“阶段”值，是一个enum，具体为Immediate（最近）、Near（近）、Far（远）、Unknown（检测到的信号极弱，可理解为非常远）</p>
+</li>
+<li><p>accuracy 是一个经统计计算后得出的精度值</p>
+</li>
+<li><p>rssi 是信号强度的平均值。</p>
+</li>
+</ul>
+<p>这三个值里，proximity 是用accuracy 得出的，而accuracy 又是根据rssi 算出来的。</p>
+<p>文档里对proximity 的各个case 值没有明确指出数值范围，经实测，Immediate 大概要在0.5m 范围内，Near 则在0.5～2m，Far 为2～70m 左右。但这些数值有可能会发生变化，所以仅供参考。</p>
+<h2 id="accuracy"><a href="#accuracy" class="headerlink" title="accuracy"></a>accuracy</h2><p>需要特别记录一下accuracy。这个值官方文档描述为：</p>
+<blockquote>
+<p>Indicates the one sigma horizontal accuracy in meters. Use this property to differentiate between beacons with the same proximity value. Do not use it to identify a precise location for the beacon. Accuracy values may fluctuate due to RF interference.</p>
+</blockquote>
+<p>个人理解：该值表示水平方向上取一个sigma 上的精度值，单位为米。仅使用该值区分同一proximity 值时的beacon 的远近，而不要用于精确定位。</p>
+<p>首先需要明确一点，这个值不是一个实时的值，而是经过统计分析后算出的，所以被描述为“一个sigma 上的”，简单翻了翻误差统计，貌似这一个sigma 的范围内得出的值的可信度在95%，所以这个值可以作为一个参考值，但很明显不能作为精确值使用。<br>结合技术概要里信号频率的描述，可以推测是系统1秒内把收到的10次Beacon 信号做了统计分析，然后得出了accuracy 的值。</p>
+<p>顺便提一下那个rssi，官网文档说：</p>
+<blockquote>
+<p>This value is the average RSSI value of the samples received since the range of the beacon was last reported to your app.</p>
+</blockquote>
+<p>所以这个rssi 也是10次取值后的平均值了。</p>
+<p>关于accuracy 的计算，简单了解了一下，在Beacon 发出的信号里包含有一个叫Tx Power 的值，这个值表示在距离这个Beacon 1m 时测到的信号强度，是Beacon 厂商计算好的（有的Beacon 厂商提供修改该值的方法，从而达到控制Beacon 信号广播范围的目的）。于是系统会以这个值为基准，结合收到的信号强度（也就是rssi），算出一个距离值accuracy。<br>Tx Power 并非一个真正的信号强度值，硬件的信号强度这些默认是不改变的，除非厂商提供直接修改的办法。这个值仅仅用来给系统测量距离，所以把它改的越大（表示需要收到这么强的信号才能认为距离1m），则系统计算出的距离就变的越远（因为实际距离1m 时根本收不到这么强的信号）。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;因工作需要研究了一下iBeacon，简单总结一下。&lt;/p&gt;
+&lt;h2 id=&quot;技术概要&quot;&gt;&lt;a href=&quot;#技术概要&quot; class=&quot;headerlink&quot; title=&quot;技术概要&quot;&gt;&lt;/a&gt;技术概要&lt;/h2&gt;&lt;p&gt;Apple 的iBeacon 技术规范里规定iBeacon 的信号广播频率为100ms 一次，即1秒10次。而Apple 提供的SDK里对iBeacon 监听回调函数由系统每隔一秒通知一次。这两个频率相关的内容是无法更改的。&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="iOS" scheme="http://tyeen.github.io/tags/iOS/"/>
+    
+      <category term="iBeacon" scheme="http://tyeen.github.io/tags/iBeacon/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Implement image zooming with UIScrollView</title>
+    <link href="http://tyeen.github.io/2015/02/13/Implement-image-zooming-with-UIScrollView/"/>
+    <id>http://tyeen.github.io/2015/02/13/Implement-image-zooming-with-UIScrollView/</id>
+    <published>2015-02-13T06:01:33.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>想要在iOS上实现一个简单的手指缩放图片的功能，查了一下用UIScrollView 是一个比较方便的途径，因为其原生支持pinch－zoom的功能，这点真是比Android 好太多。</p>
+<p>##实现方式</p>
+<p>经过一些搜索和实验，明确了UIScrollView 要实现pinch－zoom，只需做到下面两点：</p>
+<ul>
+<li><p>实现UIScrollView.viewForZoomingInScrollView() 函数。</p>
+</li>
+<li><p>设置好maximumZoomScale 和 minimumZoomScroll 以及zoomScale 属性的值。</p>
+</li>
+</ul>
+<a id="more"></a>
+<p>第一个函数自然返回一个需要被放大／缩小的UIImageView 实例。</p>
+<p>关于第二点里的几个值，我最开始有点迷糊。从字面上看是最大／最小的缩放比例值以及当前缩放的比例值。而因为我想放大／缩小的图片本身的大小是不知道的（从网络上获取而来），所以需要根据图片本身的大小来计算出这些比例值，这样一来才能做到图片刚显示时是充满屏幕的。所以开始我想到的策略是：先计算出当图片适应到屏幕后的缩放值（这里要分是宽还是高缩放的更大）a，并把它设给zoomScale，然后minimumZoomScall 设为min(a, 1), maximumZoomScale 设为max(a, 1)</p>
+<p>后来经过几番验证发现这么做是不对的。一般而言zoomScale 应被初始设为1，这样实际上是在告诉UIScrollView 当前缩放的比例为1。因为我的需求是图片开始要充满屏幕，所以这里1应当表示为<strong>被放大／缩小过的比例值</strong>，再相对这个1来确定minimumZoomScale 和maximumZoomScale，即若图片被缩小了，也即图片本身要大于屏幕，则minimumZoomScale 设为1，maximumZoomScale 设为a；反之则设maximumZoomScale 设为1，minimumZoomScale 为a。</p>
+<p>##Auto Layout</p>
+<p>因为项目一直在坚持用Auto Layout，所以开始想在UIScrollView 上依然继续使用Auto Layout。然而却十分的不顺。</p>
+<p>因为图片开始显示时应当是<strong>居中</strong>的，所以最开始想到的就是约定好CenterX、CenterY，然后Width和Height设置为缩放后的值。这样跑起来的结果是图片开始显示是正确的，但是一旦放大／缩小过，位置就不对了。想来是因为这个CenterX、CenterY的约定让ImageView 的位置出现了偏离。</p>
+<p>于是第二次我试着直接约定ImageView 的Left、Top、Right、Bottom到ScrollView 上，然后在UIScrollViewDelegate 的scrollViewDidZoom 回调里更改相应约定的constant 来改变ImageView的大小。但实际运行起来发现不能达到预期效果，ImageView 在被放大／缩小过后就一直保持一个奇怪的大小上了（当然也和我设置zoomScale、minimumZoomScale和maximumZoomScale不对有关）。然后试着覆盖updateConstraints() 后发现放大缩小后根本没被调用。</p>
+<p>##终极方案：直接操作frame</p>
+<p>至此也就明白UIScrollView 在缩放里面的view 时并没有对constraints 做调整，而是直接改的frame／bounds 等基本信息。</p>
+<p>所以要想用UIScrollView 实现图片的手指缩放，那么操作frame 是唯一的方案了。在设置好zoomScale、minimumZoomScale和maximumZoomScale 的值后，再在scrollViewDidZoom() 里去按缩放比例更新被修改过的ImageView 的frame 的原点坐标，从而让ImageView 被缩小后仍然<strong>居中</strong>显示、被放大后顶到ScrollView 的边。</p>
+<p>##收获</p>
+<p>Auto Layout 不是灵丹妙药，不能靠它来完成一切。Auto Layout 在目前而言仅仅是用在布局上。系统在最开始按照子／父view 之间的约定关系，把各个view 按正确的布局显示出来。所以我们可以通过覆盖重写layoutSubviews() 函数来微调frame，实现我们自己的布局（这个阶段系统对约定的解析已经完毕，操作frame 是安全的）。但是UIView 的动画体系却是依赖于Auto Layout 的，即想要在开启了Auto Layout 后的UIView 上做动画，最好是更改约定（constraint）的值（constant），而不要直接操作frame，否则系统会在某个时间把你操作过的frame 再次修改掉。<br>UIScrollView 的动作在这点上确实感觉不太统一，不过UIScrollView 原本就是靠改bounds 的offset 来实现的滑动，所以在缩放／滑动功能上想要套用Auto Layout 感觉确实难度较大。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;想要在iOS上实现一个简单的手指缩放图片的功能，查了一下用UIScrollView 是一个比较方便的途径，因为其原生支持pinch－zoom的功能，这点真是比Android 好太多。&lt;/p&gt;
+&lt;p&gt;##实现方式&lt;/p&gt;
+&lt;p&gt;经过一些搜索和实验，明确了UIScrollView 要实现pinch－zoom，只需做到下面两点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;实现UIScrollView.viewForZoomingInScrollView() 函数。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;设置好maximumZoomScale 和 minimumZoomScroll 以及zoomScale 属性的值。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+    
+    </summary>
+    
+    
+      <category term="iOS" scheme="http://tyeen.github.io/tags/iOS/"/>
+    
+      <category term="UIScrollView" scheme="http://tyeen.github.io/tags/UIScrollView/"/>
+    
+      <category term="Auto Layout" scheme="http://tyeen.github.io/tags/Auto-Layout/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Xcode Plug-in: NavigationBarShrinker</title>
+    <link href="http://tyeen.github.io/2014/07/28/xcode-plug-in-navigationbarshrinker/"/>
+    <id>http://tyeen.github.io/2014/07/28/xcode-plug-in-navigationbarshrinker/</id>
+    <published>2014-07-28T12:30:32.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近完成了一个Xcode插件，用来控制编辑器上方导航栏的显示。开发中学到了不少东西，小记一笔。</p>
+<p>契机归功于Xcode 6 Beta3，把导航栏改宽了不少，导致垂直可视区域少了一行代码，Yosemite把标题栏缩短的优势也荡然无存。<br><a id="more"></a></p>
+<p>开始做的时候只是想把导航栏的高度缩小就行了，后来突然想如果能直接控制让其缩小／恢复／直接消失岂不是更好用，顺带还可以学习操作NSView。<br>于是又加上了菜单和一些状态变换逻辑，才变成了下图的效果。</p>
+<img src="/images/2014-07-28-xcode-plug-in-navigationshrinker.gif" width="400" height="400">
+<h3 id="Xcode和AutoLayout"><a href="#Xcode和AutoLayout" class="headerlink" title="Xcode和AutoLayout"></a>Xcode和AutoLayout</h3><p>我是OS X/iOS新手，但是在学习iOS开发时知道现在都用AutoLayout了，可以更好的适配屏幕。<br>于是我以为Xcode应该也在用Constraints来布局view。但测试后发现不是这样的，Xcode还是用的Autoresizing mask。这倒是让我略感惊讶，不过不用调整Constraints倒是省了不少事。</p>
+<h3 id="view的初始化时机"><a href="#view的初始化时机" class="headerlink" title="view的初始化时机"></a>view的初始化时机</h3><p>一开始的尝试是在<code>viewWillMoveToWindow:</code>里修改NavBar高度的，但是发现只改NavBar的话，会在NavBar上面出现一个灰色的条，editor并没有随着NavBar的缩短而跟着上去。要想让editor的高度跟着变，需要在调整NavBar的同时修改NavBar的superview的高度，使superview的高度和调整后的NavBar的高度一致才行。<br>这让我有点百思不得其解，因为目测NavBar的superview和editor的superview应该是一个（事实证明确实是这样，虽然不是严格意义上的superview相等，但包含NavBar的view确实同时包含Editor），如果把superview的高度改成和调整后的NavBar高度一致，那Editor不就看不到了？<br>试着打log看view的体系结构，也没看到Editor的踪影。这之后又尝试了许多歪门邪道，包括重新创建Constraints。都没法得到想要的结果。</p>
+<p>直到后来把修改高度从NavBar的<code>viewWillMoveToWindow:</code>移到包含NavBar的ViewController（IDEEditorContext）里后，才明白原来和view的初始化顺序有关。<br>NavBar的<code>viewWillMoveToWindow:</code>被调用时，Editor还没被加载到view结构里，所以不管怎么打log也看不到editor，而这时候强行把NavBar连同其superview一起改到目标高度也是没有问题的，后面Editor加载进来后就会把superview再撑开。</p>
+<p>所以最后的做法是在包含NavBar的ViewController里，在所有view都加载完的时刻（IDEEditorContext里有个<code>viewDidInstall</code>），获取到NavBar和Editor的高度，然后对二者同时进行高度调整。</p>
+<h3 id="NSView的坐标系"><a href="#NSView的坐标系" class="headerlink" title="NSView的坐标系"></a>NSView的坐标系</h3><p>在缩小NavBar时，我直接调整的frame，但是发现要把NavBar往上挪，需要把y坐标加上某个值而不是减去。后来查资料才知道原来NSView的坐标系原点和iOS的左上角不同，是在左下角的，这确实够分裂的。</p>
+<h3 id="NSNotificationCenter"><a href="#NSNotificationCenter" class="headerlink" title="NSNotificationCenter"></a>NSNotificationCenter</h3><p>在用通知中心时了解到<code>postNotificationName:object:</code>方法是同步的，如果要异步，应该用NotificationQueue。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;最近完成了一个Xcode插件，用来控制编辑器上方导航栏的显示。开发中学到了不少东西，小记一笔。&lt;/p&gt;
+&lt;p&gt;契机归功于Xcode 6 Beta3，把导航栏改宽了不少，导致垂直可视区域少了一行代码，Yosemite把标题栏缩短的优势也荡然无存。&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="Cocoa" scheme="http://tyeen.github.io/tags/Cocoa/"/>
+    
+      <category term="Objective-C" scheme="http://tyeen.github.io/tags/Objective-C/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>清除最近打开文件列表的Alfred 2 Workflow</title>
+    <link href="http://tyeen.github.io/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/"/>
+    <id>http://tyeen.github.io/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/</id>
+    <published>2014-07-19T09:42:49.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>之前装了一个markdown的软件，发现不顺手就删掉了，然后markdown文件就被Xcode关联了（不知是之前就这样还是默认如此）。<br>于是一不小心Xcode的最近打开列表里多了一些无关紧要的md文件，然后发现不能单独删除，只能一次性全部清空，着实让我不爽。<br><a id="more"></a></p>
+<p>Google一下立刻就查到了PlistBuddy这个工具（不知是系统自带还是装Xcode带的）。但是用起来却不怎么方便，<br>毕竟是面向普通plist文件的工具，所以需要知道plist文件里的项目名字啊什么的，每次都要记住一坨字符串然后敲到命令行有点麻烦。<br>一般想要删除某个最近打开项目时都是在启动某个App之后，遂想到常用的Alfred，可以写一个简单的workflow来搞定这些。</p>
+<p>开始以为比较简单的小东西却花了一天的时间。虽然根本原因是我半吊子的python水平，不过还是觉得有些东西要记一下。</p>
+<h2 id="语言选择"><a href="#语言选择" class="headerlink" title="语言选择"></a>语言选择</h2><p>因为之前也写过一个workflow，所以知道输出到Alfred的一些基本知识，知道需要自己把xml格式写好。<br>但那次是用的bash脚本，而且只输出一个条目，所以就随便糊弄了一下。<br>但这次需要列出的项目不少，一个一个的拼xml格式有点麻烦了，而且中间一旦出现引号尖括号的转义就更有点自找无趣的意思了。</p>
+<p>通过参考别人的workflow的，发现用其他脚本做貌似比较省事。想到自己之前对python有点小了解，感觉是个练习的机会，于是就决定用python实现这次的功能。</p>
+<h2 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h2><p>功能上比较简单，OS X下所有启用了最近打开功能的App都会在~/Library/Preferences下保存一个company_name.application_name.LSSharedFileList.plist文件，所以只需取出这个文件夹下所有带LSSharedFileList的文件，就可以让用户选择想要清除的App。</p>
+<p>然后在选择App后需要列出所保存的最近打开列表。这里需要用到在/usr/libexec下面的PlistBuddy工具。它可以对plist文件进行操作，无需打开Xcode。列出plist里某一项是这么做的：</p>
+<p><code>/usr/libexec/PlistBuddy -c &quot;Print ItemName&quot; plist_file_name</code></p>
+<p>最后一步即选择要删除的项目了。这里同样用PlistBuddy，只是传入的命令不是Print，而是Delete：</p>
+<p><code>/usr/libexec/PlistBuddy -c &quot;Delete ItemName&quot; plist_file_name</code></p>
+<h2 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h2><p>思路很简单，但中间遇到不少问题。</p>
+<h3 id="1-输出内容到Alfred"><a href="#1-输出内容到Alfred" class="headerlink" title="1.输出内容到Alfred"></a>1.输出内容到Alfred</h3><p>这是首要解决的问题。因为没有任何的输出有问题了很难判断问题点在哪儿。</p>
+<p>了解到有个alfred模块类，可以生成到Alfred的输出。引入进来后用起来确实很简便：需要输出时就Item对象，最后调用其write方法即可。</p>
+<p>但是到最后了发现一个问题，就是要输出的条目内容如果不是纯英文的就会报错：</p>
+<p><code>UnicodeDecodeError: &#39;ascii&#39; codec can&#39;t decode byte 0xe5 in position 45: ordinal not in range(128)</code></p>
+<p>再度求助Google后才知道python里经常被吐槽的编码坑，编码是需要自己指定的。最后在输出时用unicode函数做一次编码解决：<code>unicode(title, &#39;utf-8&#39;)</code></p>
+<h3 id="2-执行外部命令"><a href="#2-执行外部命令" class="headerlink" title="2.执行外部命令"></a>2.执行外部命令</h3><p>也是Google了一下知道subprocess这个模块，可以通过另起进程的方式执行别的命令，然后获取返回结果。在terminal里试了试，感觉可用。但是在Alfred里尝试时却怎么也出不来结果，然后Alfred自带的debug模式也不知道为什么什么反馈也没有。在这里花了一些时间，后来发现对subprocess的用法有问题。在创建Popen时，传入的命令需要用一个list，而不是只写到一个字符串就行。比如想执行ls -A /Library/Preferences命令，直接传入’ls -A /Library/Preferences’是不行的，需要这么写：<br><code>p = subprocess.Popen([&#39;ls&#39;, &#39;-A, &#39;/Library/Preferences&#39;], stdout=subprocess.PIPE, stderr=subprocess.PIPE)</code></p>
+<p>注意上面的例子显示的不是用户目录下的Library而是根目录下的，是因为在尝试时发现用户目录的’~’是需要自行展开的，如果想用subprocess<br>执行ls -A ~/Library/Preferences，需要先用<code>os.path.expanduser(&#39;~&#39;)</code>把’~’展开后再把’/Library/Preferences’连上去。</p>
+<p>另外stderr这个不能省略，不然也取不到结果。不明白为什么。</p>
+<h3 id="3-模糊匹配"><a href="#3-模糊匹配" class="headerlink" title="3.模糊匹配"></a>3.模糊匹配</h3><p>Alfred的workflow流程是单向的，即：trigger -&gt; action -&gt; output，<br>没有可以和用户交互的方式，比如想在trigger到自己的workflow，让用户从列表里选择一个项目后不执行action，或者执行action后再trigger一遍自己是不行的。<br>因为这个限制，在用户选择App时不能通过选择列出来的项目的方式，而是需要用户输入App的名称，然后再选择需要删除的item。</p>
+<p>我想到的比较自然的方式是用模糊匹配的方式，动态过滤列表，直到最后只剩一个项目。然而我python用的不熟，不知道好的过滤方法，Google了一下也无果，但是知道了difflib的SequenceMatcher。通过这个东西可以知道两个字符串比较的一个ratio。所以最后的做法是动态改变列表的顺序，把最匹配的项目放到第一个。</p>
+<h2 id="成果"><a href="#成果" class="headerlink" title="成果"></a>成果</h2><p>基本大的问题就是上面的3个，最后完成的就是这么一个<a href="https://github.com/tyeen/delete_recent_file/raw/master/Delete%20Recent%20Files.alfredworkflow" target="_blank" rel="external">Workflow</a>。也算是第一次用python做了个小东西。还是挺有收获的。</p>
+<p>看Alfred还支持ruby，也许后面会考虑把这个小东西用ruby改写试试:)</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;之前装了一个markdown的软件，发现不顺手就删掉了，然后markdown文件就被Xcode关联了（不知是之前就这样还是默认如此）。&lt;br&gt;于是一不小心Xcode的最近打开列表里多了一些无关紧要的md文件，然后发现不能单独删除，只能一次性全部清空，着实让我不爽。&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="alfred_workflow" scheme="http://tyeen.github.io/tags/alfred-workflow/"/>
+    
+      <category term="python" scheme="http://tyeen.github.io/tags/python/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Depth 1.0 发布</title>
+    <link href="http://tyeen.github.io/2014/03/18/publish-depth-1-dot-0/"/>
+    <id>http://tyeen.github.io/2014/03/18/publish-depth-1-dot-0/</id>
+    <published>2014-03-18T11:03:36.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>今天发布了做了好久的Depth for Android，一个Twitter客户端，也是我第一个比较正式的应用。<br>而且刚一发布就发现了一个bug：发推成功后会导致app崩溃。闹了一个大笑话。还被指出了一个英语语法的问题。~_~;</p>
+<a id="more"></a>
+<h3 id="开发历程"><a href="#开发历程" class="headerlink" title="开发历程"></a>开发历程</h3><p>要做这样一个Twitter客户端的想法产生于两年前，那会儿Android 4.0 刚发布，而我一直从事于Android 系统方面的除错工作，见到4.0后真心觉得这是个巨大的变化，而当时Android 上的Twitter 客户端那叫一个惨不忍睹，于是就想自己做一个。</p>
+<p>随后其实非常不顺利，当时的水平比现在还要半吊子，加上工作的关系（其实就是我比较懒），几乎没有时间投入到开发里，过了快一年了，连个雏形都没做出来。<br>直到去年中旬，突然工作比较清闲了些（要是再不干点什么我整个人就废了…），这才开始进入了一定的开发节奏。</p>
+<p>这个应用经历了好多次翻工，而且都是彻头彻尾性质的。比如以导航来说，当初的设想是用Tab来导航的。<br>我还存有一张当时的截图:</p>
+<img src="/images/2014-03-18-publish-depth-1-dot-0-image-1.png" width="225" height="400">
+<p>但是因为我想通过在推文上横向滑动来实现快速回复等效果，所以Tab 的横向滑动就不能做了，于是那个Tab 就要用手去点，不能用Swipe的手势进行切换。我觉得实际上这个Tab 导航相当于废掉了，便又换回普通的ActionBar 导航模式。不过用了几次我就放弃了，因为我发现了一个很困扰我的问题：我手太小，而手机太大了，要去够到界面的最顶端太费劲了。从那时起，我便彻底的抛弃了ActionBar 这一Android 的基本设计要素，因为它确实不适合大屏手机（当然也可以说是我姿势的问题）。而我的主导设计因素就变成了将操作尽可能的放到屏幕的下半部分。</p>
+<p>然后我参考了当时原生的相机应用，想通过长按界面产生一个围绕手指的扇形导航界面来实现页面的切换。当然，这个想法也被我放弃了，不过这次的原因不是交互方式不好，而是我太懒，我发现这个围绕手指的导航条要画出来太麻烦。倒不是说画这个图形很麻烦，麻烦在于要计算手指的位置，比如按到屏幕的四周时，就需要变换显示的图形的位置和大小，不然还是让它原封不动的画出来的话，有一部分必然会被屏幕四周挡住。当时的Android 原生相机应用便是如此（当然现在的已经改好了）。而且长按的手势还会和按推文里的链接啊用户啊什么的冲突。</p>
+<p>最后想到的方式就是放一个按钮在屏幕下面。但是这个按钮和现在的还多少有些不同，那时候想的是放一个按钮在下面当指示器用，指示当前的页面是什么（Timeline/Mentions/Direct Message）。然后点击时是从下面显示导航面板。这个想法最终被放弃的原因在于发推的那个条。当时的设计是在那个按钮上向右滑动，便会从后面“滑”出来现在这个发推的条。个人感觉想法其实还是挺酷的，但是现实往往更残酷，在跟几个人交流过后，一致认为这种方式“反人类”。后来仔细想了想，这个确实是太不容易被发现了，而且操作上略有难度。</p>
+<p>所以最后的方式就是现在这个样子，当点击按钮时，发推用的那个条还是从后面出现，而导航面板则是通过向右滑动按钮来展示。（其实说实话这个方式我感觉也不是那么自然，但这个主要原因是我的设计能力太低，如果把那个按钮表现的像是一个把手的话，就比较直观了）</p>
+<p>以上啰哩啰嗦说的也不过是开发时反复过程中的一个。在交互方式上、数据结构的选取上、类的层次结构上我都做过几次的返工。到不是说经历这样几次翻工后这个应用就变得稳定可靠了，但是我确实一直在试图让它变得如此。</p>
+<h3 id="今后的开发"><a href="#今后的开发" class="headerlink" title="今后的开发"></a>今后的开发</h3><p>其实说实话，我并不想成为一个专业Android开发者，因为之前的工作就是调教Android 系统，我对Android 内部的机制有一定程度的了解，知道一些深埋在系统内部的bug，特别是2.x时代的Android，在我看来那真是一坨谢特。<br>当初选择Android 的目的很单纯：为了更好的了解iOS。因为众所周知，Android 算是“剽窃”了iOS，所以当时我天真的以为Android 内部应该有不少地方是从iOS那里搞来的，了解了Android，那对iOS的理解也就更容易些。当然现在不会再考虑哪个系统更好我要做哪个系统的专职开发者这种无聊的问题，不过说实话，了解一些系统方面的东西，真的还是很有帮助的。今后有时间可能会把一些调试系统时发现的bug 和开发Depth 时学到的东西记一记。</p>
+<p>对于这个应用，我当然会一直开发下去，现在只是完成了一些基本功能，相当于只是个雏形，还有好多好多可以改进和有待开发的功能。先发布出去，以后慢慢改进，感觉这样能更有动力些。在完善Depth的同时会补充学习其他方面的东西，比如之前也多少了解过的iOS和Mac。写Java久了，也想换换口味了。就像之前弄了几个Symbian上的小应用，看C++也是够的慌一样:)<br>顺便介绍一下最近搞的两个Xcode插件：</p>
+<ul>
+<li><a href="https://github.com/tyeen/BlockJump" target="_blank" rel="external">BlockJump</a>：可以在函数等之间跳转。</li>
+<li><a href="https://github.com/tyeen/SwipeGestureSwitcher" target="_blank" rel="external">SwipeGestureSwitcher</a>：可以禁用在Editor里的左右滑动切换文件的手势。</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;今天发布了做了好久的Depth for Android，一个Twitter客户端，也是我第一个比较正式的应用。&lt;br&gt;而且刚一发布就发现了一个bug：发推成功后会导致app崩溃。闹了一个大笑话。还被指出了一个英语语法的问题。~_~;&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Miscellanies" scheme="http://tyeen.github.io/tags/Miscellanies/"/>
+    
+      <category term="Android" scheme="http://tyeen.github.io/tags/Android/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>关于onSaveInstanceState 的一些认识</title>
+    <link href="http://tyeen.github.io/2014/03/06/about-onsaveinstancestate/"/>
+    <id>http://tyeen.github.io/2014/03/06/about-onsaveinstancestate/</id>
+    <published>2014-03-06T04:14:40.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>onSaveInstaceState 是Android 系统里的一个重要函数，<a href="http://developer.android.com/reference/android/app/Activity.html#onSaveInstanceState\(android.os.Bundle\" target="_blank" rel="external">官方</a>)关于它的基本描述其实已经很明白，这个函数是在系统将要kill 掉你的Activity 之前调用的，从而给你机会保存一些重要数据。并且还好心的指出这个函数并不对Activity 的生存周期产生影响，它仅仅是在上述的“特殊情况”下才会被调用，正常的退出操作并不会 触发它。简单翻译：<br><a id="more"></a></p>
+<blockquote>
+<p>用于取出上个实例（就是被kill 掉之前）的状态，从而可以在onCreate 或者onRestoreInstanceState 里恢复。这个函数将会在Activity 被kill 掉之前调用。例如：如果Activity B 从Activity A 被启动，并且在某个时间点A因为系统资源不足被kill 掉了，那么A将会通过这个函数获得机会保存它界面上的状态，这样当用户又切换回A时，保存的状态可以通过onCreate 或者onRestoreInstance 恢复。</p>
+<p>不要和Activity 的生存周期函数如onPause 等弄混了，onPause 是只要Activity 被放到后台就一定会被调用的，同样onStop 是在Activity 被销毁之前调用。什么时候onPause 和onStop 会被调用但是这个函数不会呢？那上个例子来说：当用户从B 切换回A 后，B 的onSaveInstanceState 函数是没有必要被调用的，因为B 这个实例已经不可能再被用到了。另外即使当A 处在B 的后面（后台），但是系统没有发现资源紧张的状态时，A 的onSaveInstanceState 函数是不会被调用的，相反，它的onPause 是一定会被调用的（ 因为到后台去了）。</p>
+<p>在这个函数到默认实现里，它存储了当前Activity 上View 的信息，如果你想要保存自己的一些状态信息，请务必调用默认实现，确保View 的信息被正确的保存。</p>
+</blockquote>
+<p>当初我看完这个说明（印象中早些时候没写的这么详细）后的感想就是这个玩意儿应该没多大用处吧，无非就是快要完蛋时候给个机会保存数据嘛，我完全可以在<a href="http://developer.android.com/reference/android/app/Activity.html#onStop\(\" target="_blank" rel="external">onStop</a>) 或者<a href="http://developer.android.com/reference/android/app/Activity.html#onDestroy\(\" target="_blank" rel="external">onDestroy</a>) 里做啊，反正都是要被调用的。而且保存数据还要传到<a href="http://developer.android.com/reference/android/os/Bundle.html" target="_blank" rel="external">Bundle</a> 里， 就要求自定义的数据去实现<a href="http://developer.android.com/reference/android/os/Parcelable.html" target="_blank" rel="external">Parcelalbe</a> 接口，太麻烦了。<br>试着在代码里加log 看了看被调用的情况，更有些摸不着头脑的感觉了：有时在log 里出现了，有时却没有。但有一点确实如官方说明指出的：如果这个函数被调用了，那一定是在onStop之前。</p>
+<p>但是我忽视了很重要的一点，就是“快要完蛋”和“正常退出”时保存的数据的用途。“快要完蛋”时系统调用onSaveInstanceState， 之后也确实走了onStop 和onDestroy ， 但不同的是，“快要完蛋”之后，系统有可能会再给你机会让你“重生”，也就是recreate 的过程。此时保存的数据会被直接用于Activity 的“重生”——系统帮你做这些事。 而“正常退出”则直接走onStop 和onDestroy ，这时保存的数据是用于下次启动的——你自己做这些事。</p>
+<p>要理解这个函数的重要之处，还需要明白<a href="http://developer.android.com/reference/android/app/Activity.html#onCreate\(android.os.Bundle\" target="_blank" rel="external">onCreate</a>)。它是恢复数据的关键（当然还有一个<a href="http://developer.android.com/reference/android/app/Activity.html#onRestoreInstanceState\(android.os.Bundle\" target="_blank" rel="external">onRestoreInstanceState</a>)，但是这个函数是在onStart 之后被调用，在这里恢复数据有点晚的感觉…）。这个函数带一个参数savedInstanceState，它就是onSaveInstanceState 的结果。流程是这样的：<strong>某个时刻</strong>系统触发Activity的recreate过程，首当其冲的便是调用onSaveInstanceState，接着便是onStop -&gt; onDestroy 然后将onSaveInstanceState 里保存的状态参数（就是Bundle）传给onCreate，然后就可以在onCreate 里取出之前保存的状态参数进行恢复了。</p>
+<p>这里的<strong>某个时刻</strong>有多种可能性，比如当前Activity 在后台且内存资源紧张，或者系统的配置发生了变化（字体、屏幕方向等）。系统配置变化时也伴随着<a href="http://developer.android.com/reference/android/app/Activity.html#onConfigurationChanged\(android.content.res.Configuration\" target="_blank" rel="external">onConfigurationChanged</a>) 的调用。</p>
+<blockquote>
+<p>说点题外话，虽然可以在AndroidManifest.xml里设置<br><a href="http://developer.android.com/reference/android/R.attr.html#configChanges" target="_blank" rel="external">android:configChange</a>来“避免”Activity被recreate，但是Activity却需要自己调整相应的变化。比如字号改变后，虽然<br>android:configChange=fontScale可以使Activity不被销毁，但Activity画面上的字号却不会有变化。（不知道Android这么设计<br>算不算是偷懒…）</p>
+<p>另外说到后台，并不是App到了后台就会被调用onSaveInstanceState。其实Activity被切换到后台的过程是很复杂的，系统会<br> 试着衡量被切换到后台的Activity的资源占用等等一些列的信息，从而决定是不是调用这个函数。</p>
+</blockquote>
+<p>一个实际情况就是更改系统字号。首先启动App，然后通过多任务切换（从log 里会发现这个时候onSaveInstanceState 已经被调用了），到设置里改变字号，然后再回到App，此时onStop -&gt; onDestroy -&gt; onCreate 会被依次调用，然后onCreate 的参数里就是之前保存的状态参数了。</p>
+<p>所以理论联系实际，如果App没有对界面状态的要求，每次呈现给用户的都是同一个界面，那么完全可以忽视这个过程。但是如果想在发生“意外情况”时也保留当前状态，那么重写这个函数，把想要保留的状态存到Bundle 里就成了必要的选择了。</p>
+<p>说到要保存的状态，自然会想到当前View 的状态，比如一个ListView 的当前滑动到的位置等，但是这却是不必要的。因为Android 系统会为你做这些事情，实际上View里面也有个<a href="http://developer.android.com/reference/android/view/View.html#onSaveInstanceState\(\" target="_blank" rel="external">onSaveInstanceState</a>) 函数，作用也是一模一样，只是生存周期不再是Activity 的那套，而是View 自己的（关于View 的生存周期有点麻烦，连Google 自己的人都说不明白;)。系统提供的那些控件（ListView、ScrollView、EditText 等）都会记录自己的状态以待下次被创建时使用。当然自定义的控件里添加的属性还是需要自己想办法来保存的，或者在View的onStateInstanceState 里搞定，又或者在Activity（Fragment）里搞定，具体情况具体对待了。</p>
+<p>最后是这个函数被调用并不意味着Activity 就一定会被recreate，比如通过多任务键切换到后台，此时是一定被调用的，但是即使到了后台，如果没有特殊情况发生，用户又切换回来的话，不会伴随onStop -&gt; onDestroy -&gt; onCreate的过程（这也是之前我瞎测时看到的“时有时无”的情况），否则Android 就真是 太傻了。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;onSaveInstaceState 是Android 系统里的一个重要函数，&lt;a href=&quot;http://developer.android.com/reference/android/app/Activity.html#onSaveInstanceState\(android.os.Bundle\&quot;&gt;官方&lt;/a&gt;)关于它的基本描述其实已经很明白，这个函数是在系统将要kill 掉你的Activity 之前调用的，从而给你机会保存一些重要数据。并且还好心的指出这个函数并不对Activity 的生存周期产生影响，它仅仅是在上述的“特殊情况”下才会被调用，正常的退出操作并不会 触发它。简单翻译：&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="Android" scheme="http://tyeen.github.io/tags/Android/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>First Post</title>
+    <link href="http://tyeen.github.io/2014/03/05/first-post/"/>
+    <id>http://tyeen.github.io/2014/03/05/first-post/</id>
+    <published>2014-03-05T13:06:12.000Z</published>
+    <updated>2016-05-13T08:25:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>Record for my first blog:)</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;Record for my first blog:)&lt;/p&gt;
+
+    
+    </summary>
+    
+    
+      <category term="Miscellanies" scheme="http://tyeen.github.io/tags/Miscellanies/"/>
+    
+  </entry>
+  
+</feed>

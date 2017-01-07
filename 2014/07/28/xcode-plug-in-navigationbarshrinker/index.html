@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Xcode Plug-in: NavigationBarShrinker | Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="最近完成了一个Xcode插件，用来控制编辑器上方导航栏的显示。开发中学到了不少东西，小记一笔。
+契机归功于Xcode 6 Beta3，把导航栏改宽了不少，导致垂直可视区域少了一行代码，Yosemite把标题栏缩短的优势也荡然无存。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Xcode Plug-in: NavigationBarShrinker">
+<meta property="og:url" content="http://tyeen.github.io/2014/07/28/xcode-plug-in-navigationbarshrinker/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta property="og:description" content="最近完成了一个Xcode插件，用来控制编辑器上方导航栏的显示。开发中学到了不少东西，小记一笔。
+契机归功于Xcode 6 Beta3，把导航栏改宽了不少，导致垂直可视区域少了一行代码，Yosemite把标题栏缩短的优势也荡然无存。">
+<meta property="og:image" content="http://tyeen.github.io/images/2014-07-28-xcode-plug-in-navigationshrinker.gif">
+<meta property="og:updated_time" content="2016-05-13T08:25:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Xcode Plug-in: NavigationBarShrinker">
+<meta name="twitter:description" content="最近完成了一个Xcode插件，用来控制编辑器上方导航栏的显示。开发中学到了不少东西，小记一笔。
+契机归功于Xcode 6 Beta3，把导航栏改宽了不少，导致垂直可视区域少了一行代码，Yosemite把标题栏缩短的优势也荡然无存。">
+<meta name="twitter:image" content="http://tyeen.github.io/images/2014-07-28-xcode-plug-in-navigationshrinker.gif">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main"><article id="post-xcode-plug-in-navigationbarshrinker" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Xcode Plug-in: NavigationBarShrinker
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2014/07/28/xcode-plug-in-navigationbarshrinker/" class="article-date">
+  <time datetime="2014-07-28T12:30:32.000Z" itemprop="datePublished">2014-07-28</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>最近完成了一个Xcode插件，用来控制编辑器上方导航栏的显示。开发中学到了不少东西，小记一笔。</p>
+<p>契机归功于Xcode 6 Beta3，把导航栏改宽了不少，导致垂直可视区域少了一行代码，Yosemite把标题栏缩短的优势也荡然无存。<br><a id="more"></a></p>
+<p>开始做的时候只是想把导航栏的高度缩小就行了，后来突然想如果能直接控制让其缩小／恢复／直接消失岂不是更好用，顺带还可以学习操作NSView。<br>于是又加上了菜单和一些状态变换逻辑，才变成了下图的效果。</p>
+<img src="/images/2014-07-28-xcode-plug-in-navigationshrinker.gif" width="400" height="400">
+<h3 id="Xcode和AutoLayout"><a href="#Xcode和AutoLayout" class="headerlink" title="Xcode和AutoLayout"></a>Xcode和AutoLayout</h3><p>我是OS X/iOS新手，但是在学习iOS开发时知道现在都用AutoLayout了，可以更好的适配屏幕。<br>于是我以为Xcode应该也在用Constraints来布局view。但测试后发现不是这样的，Xcode还是用的Autoresizing mask。这倒是让我略感惊讶，不过不用调整Constraints倒是省了不少事。</p>
+<h3 id="view的初始化时机"><a href="#view的初始化时机" class="headerlink" title="view的初始化时机"></a>view的初始化时机</h3><p>一开始的尝试是在<code>viewWillMoveToWindow:</code>里修改NavBar高度的，但是发现只改NavBar的话，会在NavBar上面出现一个灰色的条，editor并没有随着NavBar的缩短而跟着上去。要想让editor的高度跟着变，需要在调整NavBar的同时修改NavBar的superview的高度，使superview的高度和调整后的NavBar的高度一致才行。<br>这让我有点百思不得其解，因为目测NavBar的superview和editor的superview应该是一个（事实证明确实是这样，虽然不是严格意义上的superview相等，但包含NavBar的view确实同时包含Editor），如果把superview的高度改成和调整后的NavBar高度一致，那Editor不就看不到了？<br>试着打log看view的体系结构，也没看到Editor的踪影。这之后又尝试了许多歪门邪道，包括重新创建Constraints。都没法得到想要的结果。</p>
+<p>直到后来把修改高度从NavBar的<code>viewWillMoveToWindow:</code>移到包含NavBar的ViewController（IDEEditorContext）里后，才明白原来和view的初始化顺序有关。<br>NavBar的<code>viewWillMoveToWindow:</code>被调用时，Editor还没被加载到view结构里，所以不管怎么打log也看不到editor，而这时候强行把NavBar连同其superview一起改到目标高度也是没有问题的，后面Editor加载进来后就会把superview再撑开。</p>
+<p>所以最后的做法是在包含NavBar的ViewController里，在所有view都加载完的时刻（IDEEditorContext里有个<code>viewDidInstall</code>），获取到NavBar和Editor的高度，然后对二者同时进行高度调整。</p>
+<h3 id="NSView的坐标系"><a href="#NSView的坐标系" class="headerlink" title="NSView的坐标系"></a>NSView的坐标系</h3><p>在缩小NavBar时，我直接调整的frame，但是发现要把NavBar往上挪，需要把y坐标加上某个值而不是减去。后来查资料才知道原来NSView的坐标系原点和iOS的左上角不同，是在左下角的，这确实够分裂的。</p>
+<h3 id="NSNotificationCenter"><a href="#NSNotificationCenter" class="headerlink" title="NSNotificationCenter"></a>NSNotificationCenter</h3><p>在用通知中心时了解到<code>postNotificationName:object:</code>方法是同步的，如果要异步，应该用NotificationQueue。</p>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/02/13/Implement-image-zooming-with-UIScrollView/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Implement image zooming with UIScrollView
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">清除最近打开文件列表的Alfred 2 Workflow</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'tyeen'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>
+    Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+  </div>
+</section>
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  var disqus_url = 'http://tyeen.github.io/2014/07/28/xcode-plug-in-navigationbarshrinker/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>setjmp longjmp signal实现简单的try-catch | Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="最近升级了Xcode 7 GM，发现GitDiff 插件不工作了。于是自力更生翻源码找bug。虽然最后发现原因是之前用Xcode-beta 时xcode-select 到了beta 版，和GitDiff 并没有什么关系，但看源码时发现一对看起来很牛逼的函数：setjmp/longjmp。好奇心大起，查阅了一下他们究竟为何物。
+简单来说，setjmp/longjmp 类似goto，但牛逼的多，因为s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="setjmp longjmp signal实现简单的try-catch">
+<meta property="og:url" content="http://tyeen.github.io/2015/09/14/setjmp-longjmp-signal实现简单的try-catch/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta property="og:description" content="最近升级了Xcode 7 GM，发现GitDiff 插件不工作了。于是自力更生翻源码找bug。虽然最后发现原因是之前用Xcode-beta 时xcode-select 到了beta 版，和GitDiff 并没有什么关系，但看源码时发现一对看起来很牛逼的函数：setjmp/longjmp。好奇心大起，查阅了一下他们究竟为何物。
+简单来说，setjmp/longjmp 类似goto，但牛逼的多，因为s">
+<meta property="og:updated_time" content="2016-05-13T08:25:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="setjmp longjmp signal实现简单的try-catch">
+<meta name="twitter:description" content="最近升级了Xcode 7 GM，发现GitDiff 插件不工作了。于是自力更生翻源码找bug。虽然最后发现原因是之前用Xcode-beta 时xcode-select 到了beta 版，和GitDiff 并没有什么关系，但看源码时发现一对看起来很牛逼的函数：setjmp/longjmp。好奇心大起，查阅了一下他们究竟为何物。
+简单来说，setjmp/longjmp 类似goto，但牛逼的多，因为s">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main"><article id="post-setjmp-longjmp-signal实现简单的try-catch" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      setjmp longjmp signal实现简单的try-catch
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2015/09/14/setjmp-longjmp-signal实现简单的try-catch/" class="article-date">
+  <time datetime="2015-09-14T09:24:45.000Z" itemprop="datePublished">2015-09-14</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>最近升级了Xcode 7 GM，发现<a href="https://github.com/johnno1962/GitDiff" target="_blank" rel="external">GitDiff</a> 插件不工作了。于是自力更生翻源码找bug。虽然最后发现原因是之前用Xcode-beta 时xcode-select 到了beta 版，和GitDiff 并没有什么关系，但看源码时发现一对看起来很牛逼的函数：setjmp/longjmp。好奇心大起，查阅了一下他们究竟为何物。</p>
+<p><strong>简单来说，setjmp/longjmp 类似goto，但牛逼的多，因为setjmp/longjmp 可以在函数间“跳来跳去”。</strong></p>
+<blockquote>
+<p>不得不吐槽这对函数名，实在太不直观了。。。</p>
+</blockquote>
+<p>仅仅这么个作用的话，貌似没什么使用的必要，那GitDiff为何这么兴师动众的调用这么底层的函数呢？翻看了一下GitDiff 的commit 记录，才知道原来还有个主要人物－－<a href="https://github.com/johnno1962/GitDiff/commit/f6c189e008540fc2a425064ad4b778ec7251f2fb" target="_blank" rel="external"><code>signal</code></a>。</p>
+<p>概括GitDiff 的做法，就是通过<code>setjmp</code>保存好上下文，用<code>signal</code> 函数来截获可能出现的<code>SIGPIPE</code>，然后在<code>SIGPIPE</code>出现时通过<code>longjmp</code>返回出错之前的代码，并通过返回值来避开出错代码，继续往下走。<br>换句话说，就是实现了一个简单的try－catch机制。这也是setjmp/longjmp/signal互相配合的一个“常见”用法。</p>
+<blockquote>
+<p>关于这个<code>SIGPIPE</code>，简单Google 了一下，貌似用<code>popen</code>时还是挺常见的，一般都需要一套同步机制来保证<code>popen</code>和<code>pclose</code></p>
+</blockquote>
+<p>分开来说</p>
+<ol>
+<li>用<code>setjmp</code>保存当前上下文环境到参数(<code>jmp_buf</code>类型)里，<code>jmp_buf</code>的细节和系统具体实现相关，我也没再追下去。其返回值的规则是：第一次调用时返回0，表示是从<code>setjmp</code>返回的；之后，如果<code>longjmp</code>被调用，那么程序会根据保存的上下文环境（之前保存的<code>jmp_buf</code>类型的变量，也是<code>longjmp</code>的第一个参数），再次来到<code>setjmp</code>这里，并返回一个由<code>longjmp</code>带过来的值（<code>longjmp</code>的第二个参数），程序可以通过<code>setjmp</code>的返回值来改变流程。</li>
+<li>调用<code>signal</code>函数安装<code>SIGPIPE</code>信号的处理函数。通过<code>man</code>知道<code>signal</code>的返回值是“当前的对该信号（这里也即<code>SIGPIPE</code>）的处理函数”，也就是默认的处理函数，保存这个值很有必要，因为需要在最后进行恢复。</li>
+<li>如果<code>SIGPIPE</code>被触发，那么在之前安装的信号处理函数里调用<code>longjmp</code>。其第二个参数就是返回到<code>setjmp</code>时的值，这里只要给一个不是0的值，就可以标记为“出错”。</li>
+</ol>
+<p>虽然最后没有找出GitDiff 的bug，但是收获颇丰:)</p>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2015/04/06/UIScrollView的contentInset和Pull-to-Refresh/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">UIScrollView的contentInset和Pull-to-Refresh</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'tyeen'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>
+    Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+  </div>
+</section>
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  var disqus_url = 'http://tyeen.github.io/2015/09/14/setjmp-longjmp-signal实现简单的try-catch/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

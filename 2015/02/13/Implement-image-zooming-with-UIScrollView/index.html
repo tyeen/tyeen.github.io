@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Implement image zooming with UIScrollView | Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="想要在iOS上实现一个简单的手指缩放图片的功能，查了一下用UIScrollView 是一个比较方便的途径，因为其原生支持pinch－zoom的功能，这点真是比Android 好太多。
+##实现方式
+经过一些搜索和实验，明确了UIScrollView 要实现pinch－zoom，只需做到下面两点：
+
+实现UIScrollView.viewForZoomingInScrollView() 函数。
+
+设">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Implement image zooming with UIScrollView">
+<meta property="og:url" content="http://tyeen.github.io/2015/02/13/Implement-image-zooming-with-UIScrollView/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta property="og:description" content="想要在iOS上实现一个简单的手指缩放图片的功能，查了一下用UIScrollView 是一个比较方便的途径，因为其原生支持pinch－zoom的功能，这点真是比Android 好太多。
+##实现方式
+经过一些搜索和实验，明确了UIScrollView 要实现pinch－zoom，只需做到下面两点：
+
+实现UIScrollView.viewForZoomingInScrollView() 函数。
+
+设">
+<meta property="og:updated_time" content="2016-05-13T08:25:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Implement image zooming with UIScrollView">
+<meta name="twitter:description" content="想要在iOS上实现一个简单的手指缩放图片的功能，查了一下用UIScrollView 是一个比较方便的途径，因为其原生支持pinch－zoom的功能，这点真是比Android 好太多。
+##实现方式
+经过一些搜索和实验，明确了UIScrollView 要实现pinch－zoom，只需做到下面两点：
+
+实现UIScrollView.viewForZoomingInScrollView() 函数。
+
+设">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main"><article id="post-Implement-image-zooming-with-UIScrollView" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Implement image zooming with UIScrollView
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2015/02/13/Implement-image-zooming-with-UIScrollView/" class="article-date">
+  <time datetime="2015-02-13T06:01:33.000Z" itemprop="datePublished">2015-02-13</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>想要在iOS上实现一个简单的手指缩放图片的功能，查了一下用UIScrollView 是一个比较方便的途径，因为其原生支持pinch－zoom的功能，这点真是比Android 好太多。</p>
+<p>##实现方式</p>
+<p>经过一些搜索和实验，明确了UIScrollView 要实现pinch－zoom，只需做到下面两点：</p>
+<ul>
+<li><p>实现UIScrollView.viewForZoomingInScrollView() 函数。</p>
+</li>
+<li><p>设置好maximumZoomScale 和 minimumZoomScroll 以及zoomScale 属性的值。</p>
+</li>
+</ul>
+<a id="more"></a>
+<p>第一个函数自然返回一个需要被放大／缩小的UIImageView 实例。</p>
+<p>关于第二点里的几个值，我最开始有点迷糊。从字面上看是最大／最小的缩放比例值以及当前缩放的比例值。而因为我想放大／缩小的图片本身的大小是不知道的（从网络上获取而来），所以需要根据图片本身的大小来计算出这些比例值，这样一来才能做到图片刚显示时是充满屏幕的。所以开始我想到的策略是：先计算出当图片适应到屏幕后的缩放值（这里要分是宽还是高缩放的更大）a，并把它设给zoomScale，然后minimumZoomScall 设为min(a, 1), maximumZoomScale 设为max(a, 1)</p>
+<p>后来经过几番验证发现这么做是不对的。一般而言zoomScale 应被初始设为1，这样实际上是在告诉UIScrollView 当前缩放的比例为1。因为我的需求是图片开始要充满屏幕，所以这里1应当表示为<strong>被放大／缩小过的比例值</strong>，再相对这个1来确定minimumZoomScale 和maximumZoomScale，即若图片被缩小了，也即图片本身要大于屏幕，则minimumZoomScale 设为1，maximumZoomScale 设为a；反之则设maximumZoomScale 设为1，minimumZoomScale 为a。</p>
+<p>##Auto Layout</p>
+<p>因为项目一直在坚持用Auto Layout，所以开始想在UIScrollView 上依然继续使用Auto Layout。然而却十分的不顺。</p>
+<p>因为图片开始显示时应当是<strong>居中</strong>的，所以最开始想到的就是约定好CenterX、CenterY，然后Width和Height设置为缩放后的值。这样跑起来的结果是图片开始显示是正确的，但是一旦放大／缩小过，位置就不对了。想来是因为这个CenterX、CenterY的约定让ImageView 的位置出现了偏离。</p>
+<p>于是第二次我试着直接约定ImageView 的Left、Top、Right、Bottom到ScrollView 上，然后在UIScrollViewDelegate 的scrollViewDidZoom 回调里更改相应约定的constant 来改变ImageView的大小。但实际运行起来发现不能达到预期效果，ImageView 在被放大／缩小过后就一直保持一个奇怪的大小上了（当然也和我设置zoomScale、minimumZoomScale和maximumZoomScale不对有关）。然后试着覆盖updateConstraints() 后发现放大缩小后根本没被调用。</p>
+<p>##终极方案：直接操作frame</p>
+<p>至此也就明白UIScrollView 在缩放里面的view 时并没有对constraints 做调整，而是直接改的frame／bounds 等基本信息。</p>
+<p>所以要想用UIScrollView 实现图片的手指缩放，那么操作frame 是唯一的方案了。在设置好zoomScale、minimumZoomScale和maximumZoomScale 的值后，再在scrollViewDidZoom() 里去按缩放比例更新被修改过的ImageView 的frame 的原点坐标，从而让ImageView 被缩小后仍然<strong>居中</strong>显示、被放大后顶到ScrollView 的边。</p>
+<p>##收获</p>
+<p>Auto Layout 不是灵丹妙药，不能靠它来完成一切。Auto Layout 在目前而言仅仅是用在布局上。系统在最开始按照子／父view 之间的约定关系，把各个view 按正确的布局显示出来。所以我们可以通过覆盖重写layoutSubviews() 函数来微调frame，实现我们自己的布局（这个阶段系统对约定的解析已经完毕，操作frame 是安全的）。但是UIView 的动画体系却是依赖于Auto Layout 的，即想要在开启了Auto Layout 后的UIView 上做动画，最好是更改约定（constraint）的值（constant），而不要直接操作frame，否则系统会在某个时间把你操作过的frame 再次修改掉。<br>UIScrollView 的动作在这点上确实感觉不太统一，不过UIScrollView 原本就是靠改bounds 的offset 来实现的滑动，所以在缩放／滑动功能上想要套用Auto Layout 感觉确实难度较大。</p>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/02/19/Study-of-iBeacon/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Study of iBeacon
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/07/28/xcode-plug-in-navigationbarshrinker/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Xcode Plug-in: NavigationBarShrinker</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'tyeen'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>
+    Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+  </div>
+</section>
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  var disqus_url = 'http://tyeen.github.io/2015/02/13/Implement-image-zooming-with-UIScrollView/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

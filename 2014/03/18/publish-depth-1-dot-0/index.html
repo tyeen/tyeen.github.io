@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Depth 1.0 发布 | Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="今天发布了做了好久的Depth for Android，一个Twitter客户端，也是我第一个比较正式的应用。而且刚一发布就发现了一个bug：发推成功后会导致app崩溃。闹了一个大笑话。还被指出了一个英语语法的问题。~_~;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Depth 1.0 发布">
+<meta property="og:url" content="http://tyeen.github.io/2014/03/18/publish-depth-1-dot-0/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta property="og:description" content="今天发布了做了好久的Depth for Android，一个Twitter客户端，也是我第一个比较正式的应用。而且刚一发布就发现了一个bug：发推成功后会导致app崩溃。闹了一个大笑话。还被指出了一个英语语法的问题。~_~;">
+<meta property="og:image" content="http://tyeen.github.io/images/2014-03-18-publish-depth-1-dot-0-image-1.png">
+<meta property="og:updated_time" content="2016-05-13T08:25:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Depth 1.0 发布">
+<meta name="twitter:description" content="今天发布了做了好久的Depth for Android，一个Twitter客户端，也是我第一个比较正式的应用。而且刚一发布就发现了一个bug：发推成功后会导致app崩溃。闹了一个大笑话。还被指出了一个英语语法的问题。~_~;">
+<meta name="twitter:image" content="http://tyeen.github.io/images/2014-03-18-publish-depth-1-dot-0-image-1.png">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main"><article id="post-publish-depth-1-dot-0" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Depth 1.0 发布
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2014/03/18/publish-depth-1-dot-0/" class="article-date">
+  <time datetime="2014-03-18T11:03:36.000Z" itemprop="datePublished">2014-03-18</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>今天发布了做了好久的Depth for Android，一个Twitter客户端，也是我第一个比较正式的应用。<br>而且刚一发布就发现了一个bug：发推成功后会导致app崩溃。闹了一个大笑话。还被指出了一个英语语法的问题。~_~;</p>
+<a id="more"></a>
+<h3 id="开发历程"><a href="#开发历程" class="headerlink" title="开发历程"></a>开发历程</h3><p>要做这样一个Twitter客户端的想法产生于两年前，那会儿Android 4.0 刚发布，而我一直从事于Android 系统方面的除错工作，见到4.0后真心觉得这是个巨大的变化，而当时Android 上的Twitter 客户端那叫一个惨不忍睹，于是就想自己做一个。</p>
+<p>随后其实非常不顺利，当时的水平比现在还要半吊子，加上工作的关系（其实就是我比较懒），几乎没有时间投入到开发里，过了快一年了，连个雏形都没做出来。<br>直到去年中旬，突然工作比较清闲了些（要是再不干点什么我整个人就废了…），这才开始进入了一定的开发节奏。</p>
+<p>这个应用经历了好多次翻工，而且都是彻头彻尾性质的。比如以导航来说，当初的设想是用Tab来导航的。<br>我还存有一张当时的截图:</p>
+<img src="/images/2014-03-18-publish-depth-1-dot-0-image-1.png" width="225" height="400">
+<p>但是因为我想通过在推文上横向滑动来实现快速回复等效果，所以Tab 的横向滑动就不能做了，于是那个Tab 就要用手去点，不能用Swipe的手势进行切换。我觉得实际上这个Tab 导航相当于废掉了，便又换回普通的ActionBar 导航模式。不过用了几次我就放弃了，因为我发现了一个很困扰我的问题：我手太小，而手机太大了，要去够到界面的最顶端太费劲了。从那时起，我便彻底的抛弃了ActionBar 这一Android 的基本设计要素，因为它确实不适合大屏手机（当然也可以说是我姿势的问题）。而我的主导设计因素就变成了将操作尽可能的放到屏幕的下半部分。</p>
+<p>然后我参考了当时原生的相机应用，想通过长按界面产生一个围绕手指的扇形导航界面来实现页面的切换。当然，这个想法也被我放弃了，不过这次的原因不是交互方式不好，而是我太懒，我发现这个围绕手指的导航条要画出来太麻烦。倒不是说画这个图形很麻烦，麻烦在于要计算手指的位置，比如按到屏幕的四周时，就需要变换显示的图形的位置和大小，不然还是让它原封不动的画出来的话，有一部分必然会被屏幕四周挡住。当时的Android 原生相机应用便是如此（当然现在的已经改好了）。而且长按的手势还会和按推文里的链接啊用户啊什么的冲突。</p>
+<p>最后想到的方式就是放一个按钮在屏幕下面。但是这个按钮和现在的还多少有些不同，那时候想的是放一个按钮在下面当指示器用，指示当前的页面是什么（Timeline/Mentions/Direct Message）。然后点击时是从下面显示导航面板。这个想法最终被放弃的原因在于发推的那个条。当时的设计是在那个按钮上向右滑动，便会从后面“滑”出来现在这个发推的条。个人感觉想法其实还是挺酷的，但是现实往往更残酷，在跟几个人交流过后，一致认为这种方式“反人类”。后来仔细想了想，这个确实是太不容易被发现了，而且操作上略有难度。</p>
+<p>所以最后的方式就是现在这个样子，当点击按钮时，发推用的那个条还是从后面出现，而导航面板则是通过向右滑动按钮来展示。（其实说实话这个方式我感觉也不是那么自然，但这个主要原因是我的设计能力太低，如果把那个按钮表现的像是一个把手的话，就比较直观了）</p>
+<p>以上啰哩啰嗦说的也不过是开发时反复过程中的一个。在交互方式上、数据结构的选取上、类的层次结构上我都做过几次的返工。到不是说经历这样几次翻工后这个应用就变得稳定可靠了，但是我确实一直在试图让它变得如此。</p>
+<h3 id="今后的开发"><a href="#今后的开发" class="headerlink" title="今后的开发"></a>今后的开发</h3><p>其实说实话，我并不想成为一个专业Android开发者，因为之前的工作就是调教Android 系统，我对Android 内部的机制有一定程度的了解，知道一些深埋在系统内部的bug，特别是2.x时代的Android，在我看来那真是一坨谢特。<br>当初选择Android 的目的很单纯：为了更好的了解iOS。因为众所周知，Android 算是“剽窃”了iOS，所以当时我天真的以为Android 内部应该有不少地方是从iOS那里搞来的，了解了Android，那对iOS的理解也就更容易些。当然现在不会再考虑哪个系统更好我要做哪个系统的专职开发者这种无聊的问题，不过说实话，了解一些系统方面的东西，真的还是很有帮助的。今后有时间可能会把一些调试系统时发现的bug 和开发Depth 时学到的东西记一记。</p>
+<p>对于这个应用，我当然会一直开发下去，现在只是完成了一些基本功能，相当于只是个雏形，还有好多好多可以改进和有待开发的功能。先发布出去，以后慢慢改进，感觉这样能更有动力些。在完善Depth的同时会补充学习其他方面的东西，比如之前也多少了解过的iOS和Mac。写Java久了，也想换换口味了。就像之前弄了几个Symbian上的小应用，看C++也是够的慌一样:)<br>顺便介绍一下最近搞的两个Xcode插件：</p>
+<ul>
+<li><a href="https://github.com/tyeen/BlockJump" target="_blank" rel="external">BlockJump</a>：可以在函数等之间跳转。</li>
+<li><a href="https://github.com/tyeen/SwipeGestureSwitcher" target="_blank" rel="external">SwipeGestureSwitcher</a>：可以禁用在Editor里的左右滑动切换文件的手势。</li>
+</ul>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          清除最近打开文件列表的Alfred 2 Workflow
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/03/06/about-onsaveinstancestate/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">关于onSaveInstanceState 的一些认识</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'tyeen'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>
+    Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+  </div>
+</section>
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  var disqus_url = 'http://tyeen.github.io/2014/03/18/publish-depth-1-dot-0/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>清除最近打开文件列表的Alfred 2 Workflow | Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="之前装了一个markdown的软件，发现不顺手就删掉了，然后markdown文件就被Xcode关联了（不知是之前就这样还是默认如此）。于是一不小心Xcode的最近打开列表里多了一些无关紧要的md文件，然后发现不能单独删除，只能一次性全部清空，着实让我不爽。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="清除最近打开文件列表的Alfred 2 Workflow">
+<meta property="og:url" content="http://tyeen.github.io/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta property="og:description" content="之前装了一个markdown的软件，发现不顺手就删掉了，然后markdown文件就被Xcode关联了（不知是之前就这样还是默认如此）。于是一不小心Xcode的最近打开列表里多了一些无关紧要的md文件，然后发现不能单独删除，只能一次性全部清空，着实让我不爽。">
+<meta property="og:updated_time" content="2016-05-13T08:25:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="清除最近打开文件列表的Alfred 2 Workflow">
+<meta name="twitter:description" content="之前装了一个markdown的软件，发现不顺手就删掉了，然后markdown文件就被Xcode关联了（不知是之前就这样还是默认如此）。于是一不小心Xcode的最近打开列表里多了一些无关紧要的md文件，然后发现不能单独删除，只能一次性全部清空，着实让我不爽。">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main"><article id="post-qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      清除最近打开文件列表的Alfred 2 Workflow
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/" class="article-date">
+  <time datetime="2014-07-19T09:42:49.000Z" itemprop="datePublished">2014-07-19</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>之前装了一个markdown的软件，发现不顺手就删掉了，然后markdown文件就被Xcode关联了（不知是之前就这样还是默认如此）。<br>于是一不小心Xcode的最近打开列表里多了一些无关紧要的md文件，然后发现不能单独删除，只能一次性全部清空，着实让我不爽。<br><a id="more"></a></p>
+<p>Google一下立刻就查到了PlistBuddy这个工具（不知是系统自带还是装Xcode带的）。但是用起来却不怎么方便，<br>毕竟是面向普通plist文件的工具，所以需要知道plist文件里的项目名字啊什么的，每次都要记住一坨字符串然后敲到命令行有点麻烦。<br>一般想要删除某个最近打开项目时都是在启动某个App之后，遂想到常用的Alfred，可以写一个简单的workflow来搞定这些。</p>
+<p>开始以为比较简单的小东西却花了一天的时间。虽然根本原因是我半吊子的python水平，不过还是觉得有些东西要记一下。</p>
+<h2 id="语言选择"><a href="#语言选择" class="headerlink" title="语言选择"></a>语言选择</h2><p>因为之前也写过一个workflow，所以知道输出到Alfred的一些基本知识，知道需要自己把xml格式写好。<br>但那次是用的bash脚本，而且只输出一个条目，所以就随便糊弄了一下。<br>但这次需要列出的项目不少，一个一个的拼xml格式有点麻烦了，而且中间一旦出现引号尖括号的转义就更有点自找无趣的意思了。</p>
+<p>通过参考别人的workflow的，发现用其他脚本做貌似比较省事。想到自己之前对python有点小了解，感觉是个练习的机会，于是就决定用python实现这次的功能。</p>
+<h2 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h2><p>功能上比较简单，OS X下所有启用了最近打开功能的App都会在~/Library/Preferences下保存一个company_name.application_name.LSSharedFileList.plist文件，所以只需取出这个文件夹下所有带LSSharedFileList的文件，就可以让用户选择想要清除的App。</p>
+<p>然后在选择App后需要列出所保存的最近打开列表。这里需要用到在/usr/libexec下面的PlistBuddy工具。它可以对plist文件进行操作，无需打开Xcode。列出plist里某一项是这么做的：</p>
+<p><code>/usr/libexec/PlistBuddy -c &quot;Print ItemName&quot; plist_file_name</code></p>
+<p>最后一步即选择要删除的项目了。这里同样用PlistBuddy，只是传入的命令不是Print，而是Delete：</p>
+<p><code>/usr/libexec/PlistBuddy -c &quot;Delete ItemName&quot; plist_file_name</code></p>
+<h2 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h2><p>思路很简单，但中间遇到不少问题。</p>
+<h3 id="1-输出内容到Alfred"><a href="#1-输出内容到Alfred" class="headerlink" title="1.输出内容到Alfred"></a>1.输出内容到Alfred</h3><p>这是首要解决的问题。因为没有任何的输出有问题了很难判断问题点在哪儿。</p>
+<p>了解到有个alfred模块类，可以生成到Alfred的输出。引入进来后用起来确实很简便：需要输出时就Item对象，最后调用其write方法即可。</p>
+<p>但是到最后了发现一个问题，就是要输出的条目内容如果不是纯英文的就会报错：</p>
+<p><code>UnicodeDecodeError: &#39;ascii&#39; codec can&#39;t decode byte 0xe5 in position 45: ordinal not in range(128)</code></p>
+<p>再度求助Google后才知道python里经常被吐槽的编码坑，编码是需要自己指定的。最后在输出时用unicode函数做一次编码解决：<code>unicode(title, &#39;utf-8&#39;)</code></p>
+<h3 id="2-执行外部命令"><a href="#2-执行外部命令" class="headerlink" title="2.执行外部命令"></a>2.执行外部命令</h3><p>也是Google了一下知道subprocess这个模块，可以通过另起进程的方式执行别的命令，然后获取返回结果。在terminal里试了试，感觉可用。但是在Alfred里尝试时却怎么也出不来结果，然后Alfred自带的debug模式也不知道为什么什么反馈也没有。在这里花了一些时间，后来发现对subprocess的用法有问题。在创建Popen时，传入的命令需要用一个list，而不是只写到一个字符串就行。比如想执行ls -A /Library/Preferences命令，直接传入’ls -A /Library/Preferences’是不行的，需要这么写：<br><code>p = subprocess.Popen([&#39;ls&#39;, &#39;-A, &#39;/Library/Preferences&#39;], stdout=subprocess.PIPE, stderr=subprocess.PIPE)</code></p>
+<p>注意上面的例子显示的不是用户目录下的Library而是根目录下的，是因为在尝试时发现用户目录的’~’是需要自行展开的，如果想用subprocess<br>执行ls -A ~/Library/Preferences，需要先用<code>os.path.expanduser(&#39;~&#39;)</code>把’~’展开后再把’/Library/Preferences’连上去。</p>
+<p>另外stderr这个不能省略，不然也取不到结果。不明白为什么。</p>
+<h3 id="3-模糊匹配"><a href="#3-模糊匹配" class="headerlink" title="3.模糊匹配"></a>3.模糊匹配</h3><p>Alfred的workflow流程是单向的，即：trigger -&gt; action -&gt; output，<br>没有可以和用户交互的方式，比如想在trigger到自己的workflow，让用户从列表里选择一个项目后不执行action，或者执行action后再trigger一遍自己是不行的。<br>因为这个限制，在用户选择App时不能通过选择列出来的项目的方式，而是需要用户输入App的名称，然后再选择需要删除的item。</p>
+<p>我想到的比较自然的方式是用模糊匹配的方式，动态过滤列表，直到最后只剩一个项目。然而我python用的不熟，不知道好的过滤方法，Google了一下也无果，但是知道了difflib的SequenceMatcher。通过这个东西可以知道两个字符串比较的一个ratio。所以最后的做法是动态改变列表的顺序，把最匹配的项目放到第一个。</p>
+<h2 id="成果"><a href="#成果" class="headerlink" title="成果"></a>成果</h2><p>基本大的问题就是上面的3个，最后完成的就是这么一个<a href="https://github.com/tyeen/delete_recent_file/raw/master/Delete%20Recent%20Files.alfredworkflow" target="_blank" rel="external">Workflow</a>。也算是第一次用python做了个小东西。还是挺有收获的。</p>
+<p>看Alfred还支持ruby，也许后面会考虑把这个小东西用ruby改写试试:)</p>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/07/28/xcode-plug-in-navigationbarshrinker/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Xcode Plug-in: NavigationBarShrinker
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/03/18/publish-depth-1-dot-0/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Depth 1.0 发布</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'tyeen'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>
+    Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+  </div>
+</section>
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  var disqus_url = 'http://tyeen.github.io/2014/07/19/qing-chu-zui-jin-da-kai-wen-jian-lie-biao-de-workflow/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
