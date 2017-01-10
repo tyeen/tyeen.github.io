@@ -114,8 +114,8 @@ button::-moz-focus-inner {
   font-family: iconfont;
   font-style: normal;
   font-weight: normal;
-  src: url("fonts/iconfont.eot?v=#4.0.3");
-  src: url("fonts/iconfont.eot?#iefix&v=#4.0.3") format("embedded-opentype"), url("fonts/iconfont.woff?v=#4.0.3") format("woff"), url("fonts/iconfont.ttf?v=#4.0.3") format("truetype"), url("fonts/iconfont.svg#fontawesomeregular?v=#4.0.3") format("svg");
+  src: url("fonts/fontawesome-webfont.eot?v=#4.7.0");
+  src: url("fonts/fontawesome-webfont.eot?#iefix&v=#4.7.0") format("embedded-opentype"), url("fonts/fontawesome-webfont.woff?v=#4.7.0") format("woff"), url("fonts/fontawesome-webfont.ttf?v=#4.7.0") format("truetype"), url("fonts/fontawesome-webfont.svg#fontawesomeregular?v=#4.7.0") format("svg");
 }
 html,
 body,
@@ -1055,7 +1055,7 @@ pre .javascript .function {
     font-size: 20px;
   }
   #sidebar a#go-top i.icon.icon-up:before {
-    content: "\e606";
+    content: "\f062";
   }
   #sidebar .menus {
     padding-top: 10px;
@@ -1082,15 +1082,18 @@ pre .javascript .function {
     font-size: 20px;
   }
   #sidebar .menus ul li a i.icon.icon-home:before {
-    content: "\e600";
+    content: "\f015";
   }
   #sidebar .menus ul li a i.icon.icon-fenlei:before {
-    content: "\e603";
+    content: "\f187";
   }
   #sidebar .menus ul li a i.icon.icon-tag:before {
-    content: "\e601";
+    content: "\f02b";
   }
   #sidebar .menus ul li a i.icon.icon-github:before {
-    content: "\e604";
+    content: "\f09b";
+  }
+  #sidebar .menus ul li a i.icon.icon-twitter:before {
+    content: "\f099";
   }
 }
