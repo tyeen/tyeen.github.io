@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Android Activity Task 相关 | Crumbs of thoughts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="一直以来 Activity 和 Task 的关系就不是很清楚。即使在前公司修改 framework 时，因为分工也很少接触 Activity 相关的东西，而且就遇到的问题而言，Activity 这块也很少碰到 bug，基本算是个完成度和可靠性相当高的模块，定制 framework 也很少碰它，毕竟就操作系统而言这属于任务调度，这里出了问题那 os 基本也就挂了，核心模块之一。
+现在工作接触的 ap">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android Activity Task 相关">
+<meta property="og:url" content="http://tyeen.github.io/2017/03/15/Android-Activity-Task/index.html">
+<meta property="og:site_name" content="Crumbs of thoughts">
+<meta property="og:description" content="一直以来 Activity 和 Task 的关系就不是很清楚。即使在前公司修改 framework 时，因为分工也很少接触 Activity 相关的东西，而且就遇到的问题而言，Activity 这块也很少碰到 bug，基本算是个完成度和可靠性相当高的模块，定制 framework 也很少碰它，毕竟就操作系统而言这属于任务调度，这里出了问题那 os 基本也就挂了，核心模块之一。
+现在工作接触的 ap">
+<meta property="og:updated_time" content="2017-03-15T14:36:32.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android Activity Task 相关">
+<meta name="twitter:description" content="一直以来 Activity 和 Task 的关系就不是很清楚。即使在前公司修改 framework 时，因为分工也很少接触 Activity 相关的东西，而且就遇到的问题而言，Activity 这块也很少碰到 bug，基本算是个完成度和可靠性相当高的模块，定制 framework 也很少碰它，毕竟就操作系统而言这属于任务调度，这里出了问题那 os 基本也就挂了，核心模块之一。
+现在工作接触的 ap">
+  
+    <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <section id="main"><article id="post-Android-Activity-Task" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android Activity Task 相关
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2017/03/15/Android-Activity-Task/" class="article-date">
+  <time datetime="2017-03-15T12:37:37.000Z" itemprop="datePublished">2017-03-15</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>一直以来 Activity 和 Task 的关系就不是很清楚。即使在前公司修改 framework 时，因为分工也很少接触 Activity 相关的东西，而且就遇到的问题而言，Activity 这块也很少碰到 bug，基本算是个完成度和可靠性相当高的模块，定制 framework 也很少碰它，毕竟就操作系统而言这属于任务调度，这里出了问题那 os 基本也就挂了，核心模块之一。</p>
+<p>现在工作接触的 app 开发比较多，所以有必要梳理一下，刷<a href="https://developer.android.com/guide/components/activities/tasks-and-back-stack.html" target="_blank" rel="external">文档</a>的同时随手记录一下。可能有遗漏的知识点，以后遇到问题了再补。</p>
+<h2 id="基本关系"><a href="#基本关系" class="headerlink" title="基本关系"></a>基本关系</h2><ul>
+<li>启动的 Activity 会被压到当前任务栈（Task back stack）里，每一个 Activity 必然属于一个栈，栈里所有的 Activity 构成一个 task。新的 Activity 会默认被压到栈顶。栈嘛，LIFO。</li>
+<li>当按下 back 按钮时，顶上的会被弹出。当最后一个 Activity 被弹出后，task 就不复存在了。</li>
+<li>当按下 home 按钮时，当前 Activity 被切到 stop 状态，它所在的 task 被切到后台；当用户通过多任务按钮切换回当前 Activity 时，task 被切换回前台，并且栈顶的 Activity 回到 resume 状态。</li>
+<li>一个 Actvity （根据 intent 的 flag 或者在 manifest 文件里的配置）可能会被初始化多次到不同的 task 里。</li>
+</ul>
+<h2 id="Task-管理"><a href="#Task-管理" class="headerlink" title="Task 管理"></a>Task 管理</h2><ul>
+<li>在多 Window 的系统（7.0+），每个 window 有自己的 tasks。</li>
+<li>当 manifest 和 startActivity 的 Intent 里同时有对目标 Activity 的配置时，Intent 的配置项生效。</li>
+<li>manifest 和 Intent 对 task 的配置并不一一对应，各有自己特有的项目。</li>
+<li><p>在 manifeset 文件里关于 task 的可配置项有：</p>
+<ul>
+<li>taskAffinity：用于协同 Activity。调度时会先考虑把目标 Activity 移动到相同 affinity 的 Activity 所在的 task 里。</li>
+<li><strong>launchMode</strong>：如何加载目标 Activity 到 task 里。<ul>
+<li><strong>standard</strong> 默认形式，加载到当前 task，并且该 Activity 可被初始化多次，不管是初始化到当前 task 还是到其它 task。</li>
+<li><strong>singleTop</strong> 当前 task 的栈顶是目标 Activity 时，该 Activity 将收到 onNewIntent，并且不会被创建新实例；当目标 Activity 不在栈顶或者没有被实例过，那就初始化该 Activity 并压到栈顶。该 Activity 可以被实例化多个，并且可能属于不同的 task，也可能属于当前 task（前提是不在当前 task 栈顶）。</li>
+<li><strong>singleTask</strong> 目标 Activity 有且只有一个实例。如果已经被初始化过，则收到 onNewIntent，否则创建一个新的实例并创建一个新的 task。</li>
+<li><strong>singleInstance</strong> 目标 Activity 有且只有一个实例，并且所属 task 也只有目标 Activity 一个 Activity，其它任何由该 Activity 启动的 Activity 都将被压到别的栈里去。</li>
+</ul>
+</li>
+<li>allowTaskReparenting：和 taskAffinity 类似，协同 Activity 之用。当为<code>true</code>时会结合其它配置项，如 affinity，来调整目标 Activity 所在的 task。</li>
+<li>clearTaskOnLaunch</li>
+<li>alwaysRetainTaskState</li>
+<li>finishOnTaskLaunch</li>
+</ul>
+</li>
+<li><p>Intent flag 里关于 task 的可配置项有：</p>
+<ul>
+<li><strong>FLAG_ACTIVITY_NEW_TASK</strong> 和 launchMode = singleTask 一毛一样。</li>
+<li><strong>FLAG_ACTIVITY_CLEAR_TOP</strong> 【Intent flag 限定！！】嘛，就是当目标 Activity 实例已经存在在其它 task 里时，把该 task 里目标 Activity 头上的 Activity 全部弹出销毁，然后调用目标 Activity 的 onNewIntent。</li>
+<li><strong>FLAG_ACTIVITY_SINGLE_TOP</strong> 和 launchMode = singleTop 一毛一样。</li>
+</ul>
+</li>
+</ul>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/01/10/Depth-for-Twitter-release/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Depth for Twitter 发布</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'tyeen'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>
+    Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+  </div>
+</section>
+</section>
+        <aside id="sidebar">
+  <nav class="menus">
+  	<ul>
+  		<li><a href="/"><i class="icon icon-home"></i></a></li>
+  		
+			<li><a href="/archives"><i class="icon icon-fenlei"></i></a></li>
+  		
+  		
+			<li><a href="/tags"><i class="icon icon-tag"></i></a></li>
+  		
+  		
+  			<li><a href="https://github.com/tyeen" target="_blank"><i class="icon icon-github"></i></a></li>
+  		
+      
+        <li><a href="https://twitter.com/ptyeen" target="_blank"><i class="icon icon-twitter"></i></a></li>
+      
+  	</ul>
+  </nav>
+  <a id="go-top" href="#"><i class="icon icon-up"></i></a>
+</aside>
+      </div>
+      <footer id="footer">
+  
+	<div id="footer-info" class="inner">
+	  &copy; 2017 Yeen 
+	  - Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+	  - Theme <a href="https://github.com/Alex-fun/hexo-theme-jane/" target="_blank">Jane</a>
+	</div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tag</a>
+  
+    <a href="https://github.com/tyeen" class="mobile-nav-link">Github</a>
+  
+    <a href="https://twitter.com/ptyeen" class="mobile-nav-link">Twitter</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'tyeen';
+  
+  var disqus_url = 'http://tyeen.github.io/2017/03/15/Android-Activity-Task/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//cdn.bootcss.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

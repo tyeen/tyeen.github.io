@@ -7,20 +7,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="Depth for Twitter 的 iOS 版终于上架了🎉
 开发这个程序真是耗了不少精力，从2014年底起手开始到现在总共耗费两年的时间。虽然是断断续续的两年，期间要打工挣口饭钱，还有不断的翻工重写，但总的来说开发设计加各种放在它上面的时间也有一年多。现在成功上架，也算舒了口气。
-虽然这不是我第一个上架的 iOS app，不过可以说是我花时间最多，也是功能上相对比较完善的一个 app 了。相">
+因为最初有借这个 app 来锻炼 iOS 开发的目的，所以一如既往，全部代码依然都是手敲的，没有依赖外部的库，算">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Depth for Twitter 发布">
 <meta property="og:url" content="http://tyeen.github.io/2017/01/10/Depth-for-Twitter-release/index.html">
 <meta property="og:site_name" content="Crumbs of thoughts">
 <meta property="og:description" content="Depth for Twitter 的 iOS 版终于上架了🎉
 开发这个程序真是耗了不少精力，从2014年底起手开始到现在总共耗费两年的时间。虽然是断断续续的两年，期间要打工挣口饭钱，还有不断的翻工重写，但总的来说开发设计加各种放在它上面的时间也有一年多。现在成功上架，也算舒了口气。
-虽然这不是我第一个上架的 iOS app，不过可以说是我花时间最多，也是功能上相对比较完善的一个 app 了。相">
-<meta property="og:updated_time" content="2017-01-10T14:31:13.000Z">
+因为最初有借这个 app 来锻炼 iOS 开发的目的，所以一如既往，全部代码依然都是手敲的，没有依赖外部的库，算">
+<meta property="og:updated_time" content="2017-01-10T15:23:12.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Depth for Twitter 发布">
 <meta name="twitter:description" content="Depth for Twitter 的 iOS 版终于上架了🎉
 开发这个程序真是耗了不少精力，从2014年底起手开始到现在总共耗费两年的时间。虽然是断断续续的两年，期间要打工挣口饭钱，还有不断的翻工重写，但总的来说开发设计加各种放在它上面的时间也有一年多。现在成功上架，也算舒了口气。
-虽然这不是我第一个上架的 iOS app，不过可以说是我花时间最多，也是功能上相对比较完善的一个 app 了。相">
+因为最初有借这个 app 来锻炼 iOS 开发的目的，所以一如既往，全部代码依然都是手敲的，没有依赖外部的库，算">
   
     <link rel="alternative" href="/atom.xml" title="Crumbs of thoughts" type="application/atom+xml">
   
@@ -60,10 +60,11 @@
       
         <p><a href="https://itunes.apple.com/jp/app/depth-for-twitter/id1143773328?l=en&amp;mt=8" target="_blank" rel="external">Depth for Twitter</a> 的 iOS 版终于上架了🎉</p>
 <p>开发这个程序真是耗了不少精力，从2014年底起手开始到现在总共耗费两年的时间。虽然是断断续续的两年，期间要打工挣口饭钱，还有不断的翻工重写，但总的来说开发设计加各种放在它上面的时间也有一年多。现在成功上架，也算舒了口气。</p>
-<p>虽然这不是我第一个上架的 iOS app，不过可以说是我花时间最多，也是功能上相对比较完善的一个 app 了。相比 Android 版，我添加了 Streaming API 的支持，实现了 iCloud 同步 Mute 的内容。另外虽然 Android 版在性能上我没有做妥协，但是在 iOS 版里，可以说花了更多的时间去研究如何提高滑动效率，期间有印象的大型翻工就有3次，还有熬夜到两三点利用 Instruments 一帧一帧的去优化的场景，现在想来还是无比感慨。虽然最终达到理想状态几乎时刻60 fps 的修改是受 YYKit 作者（不得不说一下，真是个牛人）的一篇关于性能的<a href="http://blog.ibireme.com/2015/11/12/smooth_user_interfaces_for_ios/" target="_blank" rel="external">博文</a>的启发，完全将绘制工作放到后台去实现的，和 Instruments 里调出来的没太大关系，但确是很值得回味的一段回忆。</p>
-<p>其实当初完成了 Android 版后并没有计划去实现一个 iOS 的版本，因为 Tweetbot 实际已经很完善、功能很健全了，我是觉得没必要再做一个去和它竞争。但后来看到 Tweetbot 的卡顿和一些一直想要的功能始终没有在其后续版本里实现，相反网页加载这个点不进反退（是的，我承认用 SafariViewController 可以更好的集成系统提供的功能，以及方便后续开发，但是那个独占的打开方式实在让我不能接受），再加上在 iPhone 上我用的最多的 app 就是 Twitter 客户端，于是一直蠢蠢欲动的“何不把最常用的 app 变成自己写的”这个念头终于开始控制不住付诸实践了。</p>
+<p>因为最初有借这个 app 来锻炼 iOS 开发的目的，所以一如既往，全部代码依然都是手敲的，没有依赖外部的库，算是一点小小的成就。绝大多数图标也是用 Affinity Designer 亲自完成。</p>
+<p>虽然这不是我第一个上架的 iOS app，不过可以说是我花时间最多，也是功能上相对比较完善的一个 app 了。相比 Android 版，我添加了 Streaming API 的支持，实现了 Mute 内容的 iCloud 同步。另外虽然 Android 版在性能上我没有做妥协，但是在 iOS 版里，可以说花了更多的时间去研究如何提高滑动的效率。期间有印象的大型翻工就有3次，还有熬夜到两三点利用 Instruments 一帧一帧的去优化的场景，现在想来还是无比感慨。虽然最终达到理想状态几乎时刻60 fps 的修改是受 YYKit 作者（不得不说一下，真是个牛人）的一篇关于性能的<a href="http://blog.ibireme.com/2015/11/12/smooth_user_interfaces_for_ios/" target="_blank" rel="external">博文</a>的启发，完全将绘制工作放到后台去实现的，和 Instruments 里调出来的没太大关系，但确是很值得回味的一段回忆。</p>
+<p>其实当初完成了 Android 版后并没有计划去实现一个 iOS 的版本，因为 Tweetbot 实际已经很完善、功能很健全了。但后来看到 Tweetbot 的卡顿和一些一直想要的功能始终没有在其后续版本里实现，相反网页加载这个点不进反退（是的，我承认用 SafariViewController 可以更好的集成系统提供的功能，以及方便后续开发，但是那个独占的打开方式实在让我不能接受），再加上在 iPhone 上我用的最多的 app 就是 Twitter 客户端，于是一直蠢蠢欲动的“何不把最常用的 app 变成自己写的”这个念头终于开始控制不住付诸实践了。</p>
 <p>虽然是花了很多精力完成的一个小作品，但是我很清楚就完成度而言和其它成熟的 Twitter 客户端还是有不小的差距，缺失的功能还很多，比如多用户支持、实时消息的推送等。不过话说回来我也并不想拿这个 app 去和那些高完成度的去比较，毕竟做这个 app 的初衷只是实现一些自己对 Twitter 客户端的需求，在这方面会力求完美。可能最值得一提的就是后台加载网页功能和流畅的滑动效果了，这两点是我目前在其它客户端上看不到的。</p>
-<p>趁着发布这个 app，赶紧把搁置了一年多的博客更新一下。其实开发期间有好多想法想要记一笔的，然而实在懒的不行，加上 Xcode 一直处于开着的状态，就会觉得赶紧再实现一个功能多好，于是就略过了。懒，总是有很多理由的:)</p>
+<p>趁着发布这个 app，赶紧把搁置了一年多的博客更新一下。其实开发期间有好多想法想要记一笔的，然而实在懒的不行，加上 Xcode 一直处于打开的状态，就会觉得赶紧再实现一个功能多好，于是就略过了。懒，总是有很多理由的:)</p>
 
       
 
@@ -74,6 +75,15 @@
   
     
 <nav id="article-nav">
+  
+    <a href="/2017/03/15/Android-Activity-Task/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android Activity Task 相关
+        
+      </div>
+    </a>
   
   
     <a href="/2015/09/14/setjmp-longjmp-signal实现简单的try-catch/" id="article-nav-older" class="article-nav-link-wrap">

@@ -28,6 +28,76 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-Android-Activity-Task" class="article article-type-post" itemscope itemprop="blogPost">
+  
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/03/15/Android-Activity-Task/">Android Activity Task 相关</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      <a href="/2017/03/15/Android-Activity-Task/" class="article-date">
+  <time datetime="2017-03-15T12:37:37.000Z" itemprop="datePublished">2017-03-15</time>
+</a>
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>一直以来 Activity 和 Task 的关系就不是很清楚。即使在前公司修改 framework 时，因为分工也很少接触 Activity 相关的东西，而且就遇到的问题而言，Activity 这块也很少碰到 bug，基本算是个完成度和可靠性相当高的模块，定制 framework 也很少碰它，毕竟就操作系统而言这属于任务调度，这里出了问题那 os 基本也就挂了，核心模块之一。</p>
+<p>现在工作接触的 app 开发比较多，所以有必要梳理一下，刷<a href="https://developer.android.com/guide/components/activities/tasks-and-back-stack.html" target="_blank" rel="external">文档</a>的同时随手记录一下。可能有遗漏的知识点，以后遇到问题了再补。</p>
+<h2 id="基本关系"><a href="#基本关系" class="headerlink" title="基本关系"></a>基本关系</h2><ul>
+<li>启动的 Activity 会被压到当前任务栈（Task back stack）里，每一个 Activity 必然属于一个栈，栈里所有的 Activity 构成一个 task。新的 Activity 会默认被压到栈顶。栈嘛，LIFO。</li>
+<li>当按下 back 按钮时，顶上的会被弹出。当最后一个 Activity 被弹出后，task 就不复存在了。</li>
+<li>当按下 home 按钮时，当前 Activity 被切到 stop 状态，它所在的 task 被切到后台；当用户通过多任务按钮切换回当前 Activity 时，task 被切换回前台，并且栈顶的 Activity 回到 resume 状态。</li>
+<li>一个 Actvity （根据 intent 的 flag 或者在 manifest 文件里的配置）可能会被初始化多次到不同的 task 里。</li>
+</ul>
+<h2 id="Task-管理"><a href="#Task-管理" class="headerlink" title="Task 管理"></a>Task 管理</h2><ul>
+<li>在多 Window 的系统（7.0+），每个 window 有自己的 tasks。</li>
+<li>当 manifest 和 startActivity 的 Intent 里同时有对目标 Activity 的配置时，Intent 的配置项生效。</li>
+<li>manifest 和 Intent 对 task 的配置并不一一对应，各有自己特有的项目。</li>
+<li><p>在 manifeset 文件里关于 task 的可配置项有：</p>
+<ul>
+<li>taskAffinity：用于协同 Activity。调度时会先考虑把目标 Activity 移动到相同 affinity 的 Activity 所在的 task 里。</li>
+<li><strong>launchMode</strong>：如何加载目标 Activity 到 task 里。<ul>
+<li><strong>standard</strong> 默认形式，加载到当前 task，并且该 Activity 可被初始化多次，不管是初始化到当前 task 还是到其它 task。</li>
+<li><strong>singleTop</strong> 当前 task 的栈顶是目标 Activity 时，该 Activity 将收到 onNewIntent，并且不会被创建新实例；当目标 Activity 不在栈顶或者没有被实例过，那就初始化该 Activity 并压到栈顶。该 Activity 可以被实例化多个，并且可能属于不同的 task，也可能属于当前 task（前提是不在当前 task 栈顶）。</li>
+<li><strong>singleTask</strong> 目标 Activity 有且只有一个实例。如果已经被初始化过，则收到 onNewIntent，否则创建一个新的实例并创建一个新的 task。</li>
+<li><strong>singleInstance</strong> 目标 Activity 有且只有一个实例，并且所属 task 也只有目标 Activity 一个 Activity，其它任何由该 Activity 启动的 Activity 都将被压到别的栈里去。</li>
+</ul>
+</li>
+<li>allowTaskReparenting：和 taskAffinity 类似，协同 Activity 之用。当为<code>true</code>时会结合其它配置项，如 affinity，来调整目标 Activity 所在的 task。</li>
+<li>clearTaskOnLaunch</li>
+<li>alwaysRetainTaskState</li>
+<li>finishOnTaskLaunch</li>
+</ul>
+</li>
+<li><p>Intent flag 里关于 task 的可配置项有：</p>
+<ul>
+<li><strong>FLAG_ACTIVITY_NEW_TASK</strong> 和 launchMode = singleTask 一毛一样。</li>
+<li><strong>FLAG_ACTIVITY_CLEAR_TOP</strong> 【Intent flag 限定！！】嘛，就是当目标 Activity 实例已经存在在其它 task 里时，把该 task 里目标 Activity 头上的 Activity 全部弹出销毁，然后调用目标 Activity 的 onNewIntent。</li>
+<li><strong>FLAG_ACTIVITY_SINGLE_TOP</strong> 和 launchMode = singleTop 一毛一样。</li>
+</ul>
+</li>
+</ul>
+
+      
+
+      
+        
+    </div>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-Depth-for-Twitter-release" class="article article-type-post" itemscope itemprop="blogPost">
   
   <div class="article-inner">
@@ -52,10 +122,11 @@
       
         <p><a href="https://itunes.apple.com/jp/app/depth-for-twitter/id1143773328?l=en&amp;mt=8" target="_blank" rel="external">Depth for Twitter</a> 的 iOS 版终于上架了🎉</p>
 <p>开发这个程序真是耗了不少精力，从2014年底起手开始到现在总共耗费两年的时间。虽然是断断续续的两年，期间要打工挣口饭钱，还有不断的翻工重写，但总的来说开发设计加各种放在它上面的时间也有一年多。现在成功上架，也算舒了口气。</p>
-<p>虽然这不是我第一个上架的 iOS app，不过可以说是我花时间最多，也是功能上相对比较完善的一个 app 了。相比 Android 版，我添加了 Streaming API 的支持，实现了 iCloud 同步 Mute 的内容。另外虽然 Android 版在性能上我没有做妥协，但是在 iOS 版里，可以说花了更多的时间去研究如何提高滑动效率，期间有印象的大型翻工就有3次，还有熬夜到两三点利用 Instruments 一帧一帧的去优化的场景，现在想来还是无比感慨。虽然最终达到理想状态几乎时刻60 fps 的修改是受 YYKit 作者（不得不说一下，真是个牛人）的一篇关于性能的<a href="http://blog.ibireme.com/2015/11/12/smooth_user_interfaces_for_ios/" target="_blank" rel="external">博文</a>的启发，完全将绘制工作放到后台去实现的，和 Instruments 里调出来的没太大关系，但确是很值得回味的一段回忆。</p>
-<p>其实当初完成了 Android 版后并没有计划去实现一个 iOS 的版本，因为 Tweetbot 实际已经很完善、功能很健全了，我是觉得没必要再做一个去和它竞争。但后来看到 Tweetbot 的卡顿和一些一直想要的功能始终没有在其后续版本里实现，相反网页加载这个点不进反退（是的，我承认用 SafariViewController 可以更好的集成系统提供的功能，以及方便后续开发，但是那个独占的打开方式实在让我不能接受），再加上在 iPhone 上我用的最多的 app 就是 Twitter 客户端，于是一直蠢蠢欲动的“何不把最常用的 app 变成自己写的”这个念头终于开始控制不住付诸实践了。</p>
+<p>因为最初有借这个 app 来锻炼 iOS 开发的目的，所以一如既往，全部代码依然都是手敲的，没有依赖外部的库，算是一点小小的成就。绝大多数图标也是用 Affinity Designer 亲自完成。</p>
+<p>虽然这不是我第一个上架的 iOS app，不过可以说是我花时间最多，也是功能上相对比较完善的一个 app 了。相比 Android 版，我添加了 Streaming API 的支持，实现了 Mute 内容的 iCloud 同步。另外虽然 Android 版在性能上我没有做妥协，但是在 iOS 版里，可以说花了更多的时间去研究如何提高滑动的效率。期间有印象的大型翻工就有3次，还有熬夜到两三点利用 Instruments 一帧一帧的去优化的场景，现在想来还是无比感慨。虽然最终达到理想状态几乎时刻60 fps 的修改是受 YYKit 作者（不得不说一下，真是个牛人）的一篇关于性能的<a href="http://blog.ibireme.com/2015/11/12/smooth_user_interfaces_for_ios/" target="_blank" rel="external">博文</a>的启发，完全将绘制工作放到后台去实现的，和 Instruments 里调出来的没太大关系，但确是很值得回味的一段回忆。</p>
+<p>其实当初完成了 Android 版后并没有计划去实现一个 iOS 的版本，因为 Tweetbot 实际已经很完善、功能很健全了。但后来看到 Tweetbot 的卡顿和一些一直想要的功能始终没有在其后续版本里实现，相反网页加载这个点不进反退（是的，我承认用 SafariViewController 可以更好的集成系统提供的功能，以及方便后续开发，但是那个独占的打开方式实在让我不能接受），再加上在 iPhone 上我用的最多的 app 就是 Twitter 客户端，于是一直蠢蠢欲动的“何不把最常用的 app 变成自己写的”这个念头终于开始控制不住付诸实践了。</p>
 <p>虽然是花了很多精力完成的一个小作品，但是我很清楚就完成度而言和其它成熟的 Twitter 客户端还是有不小的差距，缺失的功能还很多，比如多用户支持、实时消息的推送等。不过话说回来我也并不想拿这个 app 去和那些高完成度的去比较，毕竟做这个 app 的初衷只是实现一些自己对 Twitter 客户端的需求，在这方面会力求完美。可能最值得一提的就是后台加载网页功能和流畅的滑动效果了，这两点是我目前在其它客户端上看不到的。</p>
-<p>趁着发布这个 app，赶紧把搁置了一年多的博客更新一下。其实开发期间有好多想法想要记一笔的，然而实在懒的不行，加上 Xcode 一直处于开着的状态，就会觉得赶紧再实现一个功能多好，于是就略过了。懒，总是有很多理由的:)</p>
+<p>趁着发布这个 app，赶紧把搁置了一年多的博客更新一下。其实开发期间有好多想法想要记一笔的，然而实在懒的不行，加上 Xcode 一直处于打开的状态，就会觉得赶紧再实现一个功能多好，于是就略过了。懒，总是有很多理由的:)</p>
 
       
 
@@ -391,45 +462,6 @@
         
           <p class="article-more-link">
             <a href="/2014/03/18/publish-depth-1-dot-0/#more">More...</a>
-          </p>
-        
-      
-
-      
-        
-    </div>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-about-onsaveinstancestate" class="article article-type-post" itemscope itemprop="blogPost">
-  
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/03/06/about-onsaveinstancestate/">关于onSaveInstanceState 的一些认识</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-meta">
-      <a href="/2014/03/06/about-onsaveinstancestate/" class="article-date">
-  <time datetime="2014-03-06T04:14:40.000Z" itemprop="datePublished">2014-03-06</time>
-</a>
-      
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>onSaveInstaceState 是Android 系统里的一个重要函数，<a href="http://developer.android.com/reference/android/app/Activity.html#onSaveInstanceState\(android.os.Bundle\">官方</a>)关于它的基本描述其实已经很明白，这个函数是在系统将要kill 掉你的Activity 之前调用的，从而给你机会保存一些重要数据。并且还好心的指出这个函数并不对Activity 的生存周期产生影响，它仅仅是在上述的“特殊情况”下才会被调用，正常的退出操作并不会 触发它。简单翻译：<br>
-        
-          <p class="article-more-link">
-            <a href="/2014/03/06/about-onsaveinstancestate/#more">More...</a>
           </p>
         
       
